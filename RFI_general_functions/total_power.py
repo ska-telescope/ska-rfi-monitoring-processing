@@ -20,7 +20,7 @@ def total_power(time,freq,data,fo,B,Tlow=0,Thigh=1e100,plot_flag=0):
     ind1 = int((fmin-freq[0])/fstep)
     ind2 = int((fmax-freq[0])/fstep)
     
-    total_power = np.sum(data[:,ind1:ind2]**2,1)
+    total_power = np.sum(data[:,ind1:ind2],1)
     
     # include some threshold limitations
     if (Tlow!=0 and Thigh!=1e100):
@@ -31,11 +31,15 @@ def total_power(time,freq,data,fo,B,Tlow=0,Thigh=1e100,plot_flag=0):
         Data2 = total_power[mask]
         time = time[mask]
         # include some threshold limitations
-    
+    else:
+        Data2 = total_power
+            
+        
     
     if plot_flag ==1:
         plt.figure()
         plt.plot(10*np.log10((Data2)))
         plt.title('freq = ' + str(fo) + ' MHz, B = ' + str(B) + ' MHz')
         plt.grid(True,'both')
+    
     return time,Data2
