@@ -1,0 +1,20 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Apr 11 12:26:56 2019
+
+@author: f.divruno
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plot_percentile(freq,data,percentile,title=''):
+    #the data is m x n and the m dimension will be used to calculate the percentile, so 
+    #this must be the time dimension.
+    data_perc = np.percentile(data,percentile,axis=0)
+    plt.figure()
+    plt.plot(freq,10*np.log10(data_perc))
+    plt.grid(True,'both')
+    plt.title(str(percentile) + ' percentile - ' + title)
+    return data_perc
+    
