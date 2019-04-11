@@ -104,7 +104,7 @@ RFI.plot_spectrogram(SKALA2_time2/3600,freq3,SKALA2_2013_P1_I1,'Spectrogram - SK
 # This allows to see what is the time domain behaviour of the interference in this band.
 
 fo = 200 #MHz  # full band
-B = 300 #MHz
+B = 390 #MHz
 
 #fo = 128 #MHz  # Aeronautic Comms band
 #B = 16 #MHz
