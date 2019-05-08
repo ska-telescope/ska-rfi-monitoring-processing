@@ -24,3 +24,6 @@ from  RFI_general_functions.plot_spectrogram import plot_spectrogram
 from  RFI_general_functions.read_phase0_data import read_phase0_data
 from  RFI_general_functions.total_power import total_power
 from  RFI_general_functions.read_SKALA2_Bighorns_data import read_SKALA2_Bighorns_data
+from  RFI_general_functions.SKA_EMIEMC_std import SKA_EMIEMC_std
+from  RFI_general_functions.read_MRO_data import read_MRO_data
+from  RFI_general_functions.get_channel import get_channel

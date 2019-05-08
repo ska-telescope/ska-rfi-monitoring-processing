@@ -289,7 +289,7 @@ RFI.plot_percentile(f,data,100,title='Maximum values - '+title)
 
 
 #%% percentiles
-perc = 98
+perc = 100
 f= SKALA4_freq
 data= SKALA4_pow
 title= 'Phase0 - SKALA4.0 - 20190331'

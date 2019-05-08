@@ -20,16 +20,19 @@ font = {'family' : 'DejaVu Sans','weight' : 'normal','size'   : 22}
 matplotlib.rc('font', **font)
 
 
-#%% 
+#%% SKALA2 with bighorns
+#
+#
+#directory = 'C:\\RFI Raw Data\\RFI measurements in AUS\\SKALA 2 with BIGHORNS\\SKALA_Bighorns\\skala_x\\'
+# 
+##get the directories:
+#dirs = os.listdir(directory)
+#datenum = 1
+#[SKALA2_freq,SKALA2_pow] = RFI.read_SKALA2_Bighorns_data(directory+dirs[datenum]) # the day is the number.
 
-
-directory = 'C:\\RFI Raw Data\\RFI measurements in AUS\\SKALA 2 with BIGHORNS\\SKALA_Bighorns\\skala_x\\'
- 
-#get the directories:
-dirs = os.listdir(directory)
-datenum = 14
-[SKALA2_freq,SKALA2_pow] = RFI.read_SKALA2_Bighorns_data(directory+dirs[datenum]) # the day is the number.
-
+#%% MRO Data ---- testing
+filepath  = 'C:\\RFI Raw Data\\RFI measurements in AUS\\MRO_monitoring\\'
+[MOR_freq,MRO_E] = RFI.read_MRO_data(filepath)
 
 
 #%% maximum values
@@ -72,11 +75,11 @@ f= SKALA2_freq
 data= SKALA2_pow
 title= 'SKALA2 with bighorns digitizer'
 
-fo = 200 #MHz  # Aeronautic Comms band
-B = 300 #MHz
+#fo = 200 #MHz  # Full Band
+#B = 300 #MHz
 
-#fo = 128 #MHz  # Aeronautic Comms band
-#B = 16 #MHz
+fo = 128 #MHz  # Aeronautic Comms band
+B = 16 #MHz
 
 #fo = 138.5 #MHz #This is Orbcom
 #B = 2 #MHz
@@ -88,16 +91,15 @@ B = 300 #MHz
 #fo = 255 #MHz Milstar satellite
 #B = 30 #MHz
 
-fo = 112.5 #MHz Milstar satellite
-B = 9 #MHz
+#fo = 112.5 #MHz Milstar satellite
+#B = 9 #MHz
 
-fo = 16 #MHz  # low freq stuf
-B = 25 #MHz
+#fo = 16 #MHz  # low freq stuf
+#B = 25 #MHz
 
 
-
-low_th = 0
-high_th = 1e200
+low_th = 1e9
+high_th = 1e12
 
 time2,Data2 = RFI.total_power(time*3600,f,data,fo,B,low_th,high_th,0)
 
