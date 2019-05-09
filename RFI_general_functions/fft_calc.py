@@ -71,6 +71,6 @@ def partition(signal,max_len, func1, func2= idle_fun):
 
 def power_spectrum(data):
     N = np.size(data,1) 
-    P = np.abs(data[:,0:int(N/2)].astype('float32'))**2
+    P = np.abs(data[:,0:int(N/2)]).astype('float32')**2
     
     return P
