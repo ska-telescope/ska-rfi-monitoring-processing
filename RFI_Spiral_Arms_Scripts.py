@@ -169,7 +169,7 @@ def get_int_power(f, freqs, data, low, high):
     plt.show()
     return df, newdata, resdata, filtereddata
 
-
+#%% 
 ''' Site Location:  '''
 ''' *************** '''
 ''' CORE SITE (M48) '''
@@ -177,7 +177,7 @@ def get_int_power(f, freqs, data, low, high):
 
 ''' BAND 0 '''
 low = 350e6
-high = 750e6
+high = 2000e6
 
 ''' This is the path where the .h5 data file is located '''
 path = 'calibrated_data/Day1_Core/M48/'
@@ -205,6 +205,7 @@ plot_calibrated_data(freqs1, data_max1, data901, data991, data_median1,
                      chan_low1, chan_high1)
 ''' *************** '''
 
+#%%
 ''' *************** '''
 ''' TIME OCCUPANCY  '''
 ''' *************** '''
@@ -217,6 +218,7 @@ chan_high1 = freq_to_chan(freqs1, high)
 get_time_occupancy(freqs1, data1, chan_low1, chan_high1, title)
 ''' *************** '''
 
+#%%
 ''' *************** '''
 ''' WATERFALL PLOTS '''
 ''' *************** '''
@@ -226,6 +228,7 @@ low1 = 622.5e6
 high1 = 625.5e6
 get_waterfall_section(freqs1, data1, data_max1, low1, high1, title)
 
+#%%
 ''' **************** '''
 ''' INTEGRATED POWER '''
 ''' **************** '''
