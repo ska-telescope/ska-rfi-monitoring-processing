@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 import RFI_general_functions as RFI
 import numpy as np
 
+outdir = r'/mnt/data/MRO_rfidata/output'
+indir = r'/mnt/data/Downloads/datafiles'
+
 def moving_average(a, n=3) :
     ret = np.cumsum(a, dtype='float32')
     ret[n:] = ret[n:] - ret[:-n]
@@ -22,6 +25,7 @@ filepath = folderpath + r'\rfidata_mro_2019-05-12_2340.fits.gz'
 
 read_files = 0
 if read_files:
+    print('reading files...')
     [f,a] = RFI.read_MRO_data(folderpath)
     np.savez_compressed(folderpath + r'/MRO_rfidata', f=f, A=a)
 else:
@@ -57,32 +61,52 @@ for i in range(len(a)):
 
 #%%
     
-        
-plt.figure()
-plt.plot(f,np.transpose(a[-1,:]))
-plt.plot(f,fit)
-plt.xlabel('Freq')
-plt.ylabel('power dBm')
-
+#        
 #plt.figure()
-#plt.plot(np.transpose(a[-1,:]))
-#plt.plot(ave)
-
-
-        
-plt.figure()
-plt.plot(f,np.transpose(b[1,:]))
-plt.plot(f,np.transpose(d[1,:]))
-#plt.plot(f_ave,np.transpose(c[1,:]))
-#plt.plot(f,np.transpose(c[1,:]))
-
-#%%
-ave = np.average(b,0)
-plt.figure()
-#plt.plot(f_ave,ave)
-plt.plot(f,ave)
+#plt.plot(f,np.transpose(a[-1,:]))
+#plt.plot(f,fit)
+#plt.xlabel('Freq')
+#plt.ylabel('power dBm')
+#
+##plt.figure()
+##plt.plot(np.transpose(a[-1,:]))
+##plt.plot(ave)
+#
+#
+#        
+#plt.figure()
+#plt.plot(f,np.transpose(b[1,:]))
+#plt.plot(f,np.transpose(d[1,:]))
+##plt.plot(f_ave,np.transpose(c[1,:]))
+##plt.plot(f,np.transpose(c[1,:]))
+#
+##%%
+#ave = np.average(b,0)
+#plt.figure()
+##plt.plot(f_ave,ave)
+#plt.plot(f,ave)
 
 #%% 
-RFI.plot_percentile(f,d,100,'dBm','MRO data, normalized with the minimum [dB]')
-RFI.plot_percentile(f,b,100,'dBm','MRO data, normalized with polyfit [dB]')
-RFI.plot_percentile(f,a,100,'dBm','MRO data [dBm]')
+#RFI.plot_percentile(f,d,100,'dBm','MRO data, normalized with the minimum [dB]')
+title = 'MRO data normalized with polyfit'
+perc = 100
+RFI.plot_percentile(f,b,perc,'dBm',title)
+title = title +'-'+ str(perc)+' percentile'
+plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
+
+title = 'MRO data'
+perc = 100
+RFI.plot_percentile(f,a,perc,'dBm',title)
+title = title +'-'+ str(perc)+' percentile'
+plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
+
+title = 'MRO data'
+perc = 90
+RFI.plot_percentile(f,a,perc,'dBm',title)
+title = title +'-'+ str(perc)+' percentile'
+plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
+
+
+
+
+
