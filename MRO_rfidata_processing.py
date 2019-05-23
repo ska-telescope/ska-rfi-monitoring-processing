@@ -16,13 +16,14 @@ def moving_average(a, n=3) :
     return ret/ n
 
 
-folderpath = r'C:\Users\F.Divruno\Dropbox (SKA)\14- RFI environment\01- Australia\rfidata_mro'
+#folderpath = r'C:\Users\F.Divruno\Dropbox (SKA)\14- RFI environment\01- Australia\rfidata_mro'
+folderpath = r'/mnt/data/Downloads/datafiles'
 filepath = folderpath + r'\rfidata_mro_2019-05-12_2340.fits.gz'
 
 read_files = 0
 if read_files:
     [f,a] = RFI.read_MRO_data(folderpath)
-    np.savez_compressed(folderpath + '\\'+'MRO_rfidata', f=f, A=a)
+    np.savez_compressed(folderpath + r'/MRO_rfidata', f=f, A=a)
 else:
     Aux = np.load(folderpath+r'\MRO_rfidata.npz')
     a = Aux['A']/10-107 #in V**2 originally, scaled to get to dBm
