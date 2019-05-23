@@ -23,7 +23,7 @@ def moving_average(a, n=3) :
 folderpath = r'/mnt/data/Downloads/datafiles'
 filepath = folderpath + r'\rfidata_mro_2019-05-12_2340.fits.gz'
 
-read_files = 0
+read_files = 1
 if read_files:
     print('reading files...')
     [f,a] = RFI.read_MRO_data(folderpath)
