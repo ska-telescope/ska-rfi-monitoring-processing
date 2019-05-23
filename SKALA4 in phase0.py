@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from math import * 
 import matplotlib
 import RFI_general_functions as RFI
+from scipy import signal 
 #from RFI_general_functions import * # RFI functions.
 
 font = {'family' : 'DejaVu Sans','weight' : 'normal','size'   : 22}
@@ -229,7 +230,7 @@ matplotlib.rc('font', **font)
 #        plt.title('freq = ' + str(fo) + ' MHz, B = ' + str(B) + ' MHz')
 #    return Data2
 
-#%% Read only one file to debug:
+#% Read only one file to debug:
 #
 #directory = "C:\\Users\\f.divruno\\Dropbox (SKA)\\14- RFI environment\\01- Australia\\Phase-0\\2019-03-31\\DATA\\RX-02_SKALA-4.0\\Pol-X"
 ##directory = "G:\\Team Drives\\LowBridging Phase-0\\TPM\\DATA\\2019-03-31 (1)\\TRIGGER\\RX-02_SKALA-4.0\\Pol-X"
@@ -269,16 +270,49 @@ directory = "C:\\Users\\f.divruno\\Dropbox (SKA)\\14- RFI environment\\01- Austr
 
 read_data_from_files = 0
 if  read_data_from_files ==1:
-    time,time_data = RFI.read_phase0_data(directory,filenum='all')
-    [freq,Ant1_pow] = RFI.fft_calc(time_data,1, 0)
-    del time_data
-    np.savez_compressed(directory + '\\'+'Phase0_SKALA4_full_day', freq=freq, SKALA4_pow=Ant1_pow,time=time)
+    time,td_data = RFI.read_phase0_data(directory,files_num='all')
+    [freq,Ant1_pow] = RFI.fft_calc(td_data,fs=800e6, 0, 0)
+    #del time_data
+    np.savez_compressed(directory + '\\'+'Phase0_SKALA4_full_day', freq=freq, SKALA4_pow=Ant1_pow,time=time, td_data=td_data)
 else:
     Aux = np.load('C:\\Users\\f.divruno\\Dropbox (SKA)\\14- RFI environment\\01- Australia\\Phase-0\\Phase0_SKALA4_full_day.npz')
     SKALA4_pow = Aux['SKALA4_pow'] #in V**2
     SKALA4_time = Aux['time'] # in seconds
     SKALA4_freq = Aux['freq'] # in MHz
 
+load_td_data = 0
+if load_td_data:
+    Aux = np.load(r'C:\Users\F.Divruno\Dropbox (SKA)\14- RFI environment\01- Australia\Phase-0\2019-03-31\DATA\RX-02_SKALA-4.0\Pol-X\Phase0_full_day_raw.npz')
+    td_data = Aux['td_data'] # time domain raw data
+    
+
+#%% filtering the td signal
+
+fs = 800e6
+fn = fs/2
+f1 = 137.7e6/fn
+f2 = 138e6/fn
+ind = 49
+b, a = signal.butter(3, [f1,f2],btype='bandpass',output='ba')
+
+zi = signal.lfilter_zi(b, a)
+z, _ = signal.lfilter(b, a, td_data[ind,:], zi=zi*td_data[ind,0])
+#Apply the filter again, to have a result filtered at an order the same as filtfilt:
+
+z2, _ = signal.lfilter(b, a, z, zi=zi*z[0])
+#Use filtfilt to apply the filter:
+y = signal.filtfilt(b, a, td_data[ind,:])
+
+plt.figure()
+plt.plot( td_data[ind,:], 'b', alpha=0.75)
+plt.plot( z, 'r--', z2, 'r', y, 'k')
+plt.legend(('noisy signal', 'lfilter, once', 'lfilter, twice','filtfilt'), loc='best')
+
+[freq,P_orig] = RFI.fft_calc(td_data[ind,:],800e6, 1, 0)
+[freq,P_filt] = RFI.fft_calc(y,800e6, 1, 0)
+
+plt.figure()
+plt.plot(freq,10*np.log10(P_orig),'r',freq,10*np.log10(P_filt),'b')
 
 #%% maximum values
 
