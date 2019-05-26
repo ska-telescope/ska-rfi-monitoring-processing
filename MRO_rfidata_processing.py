@@ -10,7 +10,7 @@ import numpy as np
 
 # in ubuntu
 outdir = r'/mnt/data/MRO_rfidata/output/'
-indir = r'/mnt/data/Downloads/datafiles/'
+indir = r'/mnt/data/MRO_rfidata/'
 # in windows
 #indir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\01- Australia\\rfidata_mro\\'
 #outdir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\01- Australia\\rfidata_mro\\results\\'
