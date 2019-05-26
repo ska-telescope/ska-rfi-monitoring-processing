@@ -17,9 +17,9 @@ def read_MRO_data(indir,outdir):
    
  
     i = 0
-#    for f in files:
-    for i in range(2): #for debugging
-        f = files[i] #for debugging
+    for f in files:
+#    for i in range(2): #for debugging
+#        f = files[i] #for debugging
         fullpath = os.path.join(indir, f)
 #        if os.path.splitext(fullpath)[1] == '.gz':
         if os.path.splitext(fullpath)[1] == '.fits':            
@@ -28,8 +28,8 @@ def read_MRO_data(indir,outdir):
                print(str(i)+' of '+str(N_files) + ' Fits files')
                #               hdul.info()
                N = np.size(hdul)
-#               for k in range(N):
-               for k in range(2): #for debugging
+               for k in range(N):
+#               for k in range(2): #for debugging
                    try:
                        print(str(k)+' of '+str(N) + ' lines')
                        aux = hdul[k].data
