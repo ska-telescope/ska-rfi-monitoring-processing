@@ -7,7 +7,7 @@ Created on Thu Apr 11 12:21:44 2019
 import numpy as np
 import matplotlib.pyplot as plt
 
-def fft_calc(signal, fs, power_calc ,plot_figs):
+def fft_calc(signal, fs, power_calc=1 ,plot_figs=0):
     # if power_calc = 1: Returns the power spectrum in real frequencies and the freq vector in MHz.
     # if power_calc = 0: Returns the complex voltage spectrum and the freq vector in MHz.
     

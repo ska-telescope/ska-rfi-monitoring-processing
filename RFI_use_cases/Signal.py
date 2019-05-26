@@ -7,6 +7,8 @@ Created on Fri May 24 14:18:19 2019
 import scipy.signal as Sig
 import numpy as np
 import matplotlib.pyplot as plt
+import RFI_general_functions as RFI
+
 
 ms = 1e-3
 us = 1e-6
@@ -114,7 +116,7 @@ def RFI_TX(Signals,powers,X,Y,Z):
 #    Signals = matrix with the generated signal trains
 #    powers = list with the Tx power for each signal type.
 #    X,Y,Z = attitude of the emitter
-
+     a=1
     
     
 def RX_gain(X,Y,Z):
@@ -172,17 +174,23 @@ def FreeSpaceLoss(R_m,fc_Hz):
 
 
 #%% ADS-B
-
-[t1,S1] = Signal('ADS-B',1000*MHz)
+fs = 5000*MHz
+[t1,S1] = Signal('ADS-B',fs)
 
 plt.figure()
 plt.plot(t1,S1)
 
 
-[t1,S1] = gen_signal_train('ADS-B',1000*MHz,3)
+[t1,S1] = gen_signal_train('ADS-B',fs,3)
 plt.figure()
 plt.plot(t1,S1)
 
+N = len(S1)
+P_fft = np.abs(np.fft.fftshift(np.fft.fft(S1)/len(S1)))**2/50
+f_fft = np.fft.fftshift(np.fft.fftfreq(N, d=1/fs))
+
+plt.figure()
+plt.plot(f_fft,10*np.log10(P_fft*1e3))
 
 #%% DME
 

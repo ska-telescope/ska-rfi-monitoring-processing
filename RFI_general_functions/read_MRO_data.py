@@ -31,8 +31,10 @@ def read_MRO_data(folder):
 #               for k in range(2): #for debugging
                    try:
                        print(str(k)+' of '+str(N) + ' lines')
-                       aux = hdul[k].data
-                       data = np.concatenate((data,np.reshape(aux['Amplitude'],[1,29801])),0) #gets the data matrix.
+                       aux = hdul[k].data.Amplitude
+#                       D = aux.Amplitude
+                       data = np.concatenate(data,aux)
+#                       data = np.concatenate((data,np.reshape(aux['Amplitude'],[1,29801])),0) #gets the data matrix.
                        
                    except:
                        A=1
