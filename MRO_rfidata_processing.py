@@ -8,8 +8,13 @@ import matplotlib.pyplot as plt
 import RFI_general_functions as RFI
 import numpy as np
 
-outdir = r'/mnt/data/MRO_rfidata/output'
-indir = r'/mnt/data/Downloads/datafiles'
+# in ubuntu
+outdir = r'/mnt/data/MRO_rfidata/output/'
+indir = r'/mnt/data/Downloads/datafiles/'
+# in windows
+indir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\01- Australia\\rfidata_mro\\'
+outdir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\01- Australia\\rfidata_mro\\results\\'
+
 
 def moving_average(a, n=3) :
     ret = np.cumsum(a, dtype='float32')
@@ -19,17 +24,15 @@ def moving_average(a, n=3) :
     return ret/ n
 
 
-#folderpath = r'C:\Users\F.Divruno\Dropbox (SKA)\14- RFI environment\01- Australia\rfidata_mro'
-folderpath = r'/mnt/data/Downloads/datafiles'
-filepath = folderpath + r'\rfidata_mro_2019-05-12_2340.fits.gz'
 
 read_files = 1
 if read_files:
     print('reading files...')
-    [f,a] = RFI.read_MRO_data(folderpath)
-    np.savez_compressed(folderpath + r'/MRO_rfidata', f=f, A=a)
+    [f,a] = RFI.read_MRO_data(indir)
+    np.savez_compressed(outdir + r'MRO_rfidata2', f=f, A=a)
+    
 else:
-    Aux = np.load(folderpath+r'\MRO_rfidata.npz')
+    Aux = np.load(outdir+r'MRO_rfidata.npz')
     a = Aux['A']/10-107 #in V**2 originally, scaled to get to dBm
     f = Aux['f'] # in MHz   
 
@@ -92,7 +95,7 @@ title = 'MRO data normalized with polyfit'
 perc = 100
 RFI.plot_percentile(f,b,perc,'dBm',title)
 title = title +'-'+ str(perc)+' percentile'
-plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
+plt.savefig(outdir+ title, dpi=100, bbox_inches='tight')
 
 title = 'MRO data'
 perc = 100

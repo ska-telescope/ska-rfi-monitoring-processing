@@ -15,10 +15,11 @@ def read_MRO_data(folder):
     data = np.zeros([0,29801]).astype('float32')
     N_files = np.size(files)
    
+ 
     i = 0
 #    for f in files:
-    for f in range(1): #for debugging
-        f = files[0] #for debugging
+    for i in range(2): #for debugging, only one file present
+        f = files[i] #for debugging
         fullpath = os.path.join(folder, f)
         if os.path.splitext(fullpath)[1] == '.gz':
            with fits.open(fullpath) as hdul:
@@ -27,7 +28,7 @@ def read_MRO_data(folder):
                #               hdul.info()
                N = np.size(hdul)
                #for k in range(N):
-               for k in range(20): #for debugging
+               for k in range(2): #for debugging
                    try:
                        print(str(k)+' of '+str(N) + ' lines')
                        aux = hdul[k].data
@@ -37,3 +38,4 @@ def read_MRO_data(folder):
                        A=1
     freq = aux['Frequency']    
     return [freq,data]
+
