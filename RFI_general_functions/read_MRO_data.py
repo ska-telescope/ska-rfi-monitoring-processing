@@ -18,7 +18,7 @@ def read_MRO_data(folder):
  
     i = 0
 #    for f in files:
-    for i in range(2): #for debugging, only one file present
+    for i in range(4): #for debugging, only one file present
         f = files[i] #for debugging
         fullpath = os.path.join(folder, f)
         if os.path.splitext(fullpath)[1] == '.gz':
