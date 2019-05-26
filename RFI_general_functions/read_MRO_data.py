@@ -27,8 +27,8 @@ def read_MRO_data(folder):
                print(str(i)+' of '+str(N_files) + ' Fits files')
                #               hdul.info()
                N = np.size(hdul)
-#               for k in range(N):
-               for k in range(2): #for debugging
+               for k in range(N):
+#               for k in range(2): #for debugging
                    try:
                        print(str(k)+' of '+str(N) + ' lines')
                        aux = hdul[k].data
