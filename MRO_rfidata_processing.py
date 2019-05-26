@@ -12,8 +12,8 @@ import numpy as np
 outdir = r'/mnt/data/MRO_rfidata/output/'
 indir = r'/mnt/data/Downloads/datafiles/'
 # in windows
-indir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\01- Australia\\rfidata_mro\\'
-outdir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\01- Australia\\rfidata_mro\\results\\'
+#indir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\01- Australia\\rfidata_mro\\'
+#outdir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\01- Australia\\rfidata_mro\\results\\'
 
 
 def moving_average(a, n=3) :
