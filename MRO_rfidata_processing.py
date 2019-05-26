@@ -7,13 +7,18 @@ Created on Wed May 22 02:42:48 2019
 import matplotlib.pyplot as plt
 import RFI_general_functions as RFI
 import numpy as np
+import sys
 
+ubuntu =1
+
+if ubuntu:
 # in ubuntu
-outdir = r'/mnt/data/MRO_rfidata/output/'
-indir = r'/mnt/data/MRO_rfidata/'
+    outdir = r'/mnt/data/MRO_rfidata/output/'
+    indir = r'/mnt/data/MRO_rfidata/'
+else:
 # in windows
-#indir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\01- Australia\\rfidata_mro\\'
-#outdir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\01- Australia\\rfidata_mro\\results\\'
+    indir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\01- Australia\\rfidata_mro\\'
+    outdir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\01- Australia\\rfidata_mro\\results\\'
 
 
 def moving_average(a, n=3) :
@@ -28,29 +33,29 @@ def moving_average(a, n=3) :
 read_files = 1
 if read_files:
     print('reading files...')
-    [f,a] = RFI.read_MRO_data(indir)
-    np.savez_compressed(outdir + r'MRO_rfidata2', f=f, A=a)
+    [freq,data] = RFI.read_MRO_data(indir,outdir)
+    np.savez_compressed(outdir + r'MRO_rfidata_full', freq=freq, data=data)
     
 else:
-    Aux = np.load(outdir+r'MRO_rfidata.npz')
-    a = Aux['A']/10-107 #in V**2 originally, scaled to get to dBm
-    f = Aux['f'] # in MHz   
+    Aux = np.load(outdir+r'MRO_rfidata_full.npz')
+    data = Aux['data']/10-107 #in V**2 originally, scaled to get to dBm
+    freq = Aux['freq'] # in MHz   
 
 #%%
 n_ave = 20
-b = np.array(a)
-d = np.array(a)
-c = np.array(a)
+b = np.array(data)
+d = np.array(data)
+c = np.array(data)
 #c = np.zeros([np.size(a,0),np.size(a,1)-(n_ave-1)])
 
-for i in range(len(a)):
+for i in range(len(data)):
     blfit = 3
     if blfit != 0:
         # subtract an Nth order polynomial to remove baseline fluctuations
-        coeffs = np.polyfit(f,a[i],blfit)
-        fit = np.poly1d(coeffs)(f)
+        coeffs = np.polyfit(freq,data[i],blfit)
+        fit = np.poly1d(coeffs)(freq)
 #        print ("max spect residual: %0.1f" % np.sqrt(np.median((a[i]-fit)**2)))
-        b[i] = a[i] - fit
+        b[i] = data[i] - fit
         print (i)
 
 #
@@ -58,8 +63,8 @@ for i in range(len(a)):
 ##    c[i,:] = a[i,19:] - ave
 #    c[i,:] = a[i,:] - ave
     
-    miin = np.min(a,0)
-    d[i] = a[i]- miin
+    miin = np.min(data,0)
+    d[i] = data[i]- miin
     
 
 #%%
@@ -93,19 +98,19 @@ for i in range(len(a)):
 #RFI.plot_percentile(f,d,100,'dBm','MRO data, normalized with the minimum [dB]')
 title = 'MRO data normalized with polyfit'
 perc = 100
-RFI.plot_percentile(f,b,perc,'dBm',title)
+RFI.plot_percentile(freq,b,perc,'dBm',title)
 title = title +'-'+ str(perc)+' percentile'
 plt.savefig(outdir+ title, dpi=100, bbox_inches='tight')
 
 title = 'MRO data'
 perc = 100
-RFI.plot_percentile(f,a,perc,'dBm',title)
+RFI.plot_percentile(freq,data,perc,'dBm',title)
 title = title +'-'+ str(perc)+' percentile'
 plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
 
 title = 'MRO data'
 perc = 90
-RFI.plot_percentile(f,a,perc,'dBm',title)
+RFI.plot_percentile(freq,data,perc,'dBm',title)
 title = title +'-'+ str(perc)+' percentile'
 plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
 
