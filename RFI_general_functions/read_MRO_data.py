@@ -38,7 +38,7 @@ def read_MRO_data(indir,outdir):
                    except:
                        A=1
                freq = aux['Frequency']
-               np.savez_compressed(outdir + 'MRO_rfidata_' + str(i), freq=freq, data=data)
+#               np.savez_compressed(outdir + 'MRO_rfidata_' + str(i), freq=freq, data=data)
     
                        
     return [freq,data]
