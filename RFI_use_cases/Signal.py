@@ -20,6 +20,7 @@ km_h = km/hr
 
 
 def Signal(Name,SamplingFreq,rand_phase=0, rand_displace=0):
+    
     if Name == 'DME':
         period = 1*ms # periodicity of the signal
         offset = 100*us
@@ -69,6 +70,15 @@ def Signal(Name,SamplingFreq,rand_phase=0, rand_displace=0):
                 
     return [t,S]
 
+def Gauss_Noise(t,fs,sig,mu):
+    # Define a white gausian noise to add to the RFI signal.
+    # noise is defined in voltage.
+    # Bandwidth of the noise is -fs/2 to fs/2
+    N = len(t)
+    Noise = sig*np.random.randn(N) + mu
+    return Noise
+
+    
 
 def gen_signal_train(Name,fs,N_repeat):
     # This function generates a repetition of the basic signal N_repeat times,
@@ -84,6 +94,7 @@ def gen_signal_train(Name,fs,N_repeat):
         except:
             tout = taux
     return tout,Sout
+
 
 
 
@@ -192,6 +203,18 @@ f_fft = np.fft.fftshift(np.fft.fftfreq(N, d=1/fs))
 plt.figure()
 plt.plot(f_fft,10*np.log10(P_fft*1e3))
 
+# With noise
+# Summing the noise to the signal train
+
+sig = 1/10
+mu = 0
+Noise = Gauss_Noise(t1,fs,sig,mu)
+S1 = S1 + Noise
+plt.figure()
+plt.plot(t1,S1)
+
+    
+    
 #%% DME
 
 [t1,S1] = Signal('DME',5000*MHz)

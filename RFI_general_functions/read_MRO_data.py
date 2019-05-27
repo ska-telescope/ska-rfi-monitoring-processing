@@ -38,8 +38,8 @@ def read_MRO_data(indir,outdir):
                    except:
                        A=1
                freq = aux['Frequency']
-#               np.savez_compressed(outdir + 'MRO_rfidata_' + str(i), freq=freq, data=data)
-    
+               np.savez_compressed(outdir + 'MRO_rfidata_' + str(i), freq=freq, data=data)
+               data = np.zeros([0,29801]).astype('float32')
                        
     return [freq,data]
 
