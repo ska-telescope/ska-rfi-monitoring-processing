@@ -59,8 +59,11 @@ else:
                 Aux = np.load(outdir+files[i])
                 data = np.concatenate((data,Aux.get('data')/10-107),0) #in V**2 originally, scaled to get to dBm
                 freq = Aux['freq'] # in MHz   
-                
-
+         
+ave = np.average(data)            
+plt.figure()
+plt.plot(freq,ave)
+plt.savefig(outdir+ 'Average_all', dpi=100, bbox_inches='tight')
 #%%
 n_ave = 20
 b = np.array(data)
