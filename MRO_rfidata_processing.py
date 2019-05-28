@@ -61,6 +61,7 @@ else:
                 Aux = np.load(outdir+files[i])
                 data = np.concatenate((data,Aux.get('data')/10-107),0) #in V**2 originally, scaled to get to dBm
                 freq = Aux['freq'] # in MHz   
+        np.savez_compressed(outdir + r'MRO_rfidata_full', freq=freq, data=data)
 
 #%% USe the data from 0 to 500 MHz
 fmin = 0
@@ -76,13 +77,13 @@ plt.savefig(outdir+ 'Average_all', dpi=100, bbox_inches='tight')
 #plot percentiles 
 title = 'MRO data'
 perc = 100
-RFI.plot_percentile(freq[(freq>=fmin) & (freq<=fmax)],data,perc,'dBm',title)
+RFI.plot_percentile(freq[(freq>=fmin) & (freq<=fmax)],D,perc,'dBm',title)
 title = title +'-'+ str(perc)+' percentile'
 plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
 
 title = 'MRO data'
 perc = 90
-RFI.plot_percentile(freq[(freq>=fmin) & (freq<=fmax)],data,perc,'dBm',title)
+RFI.plot_percentile(freq[(freq>=fmin) & (freq<=fmax)],D,perc,'dBm',title)
 title = title +'-'+ str(perc)+' percentile'
 plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
 
@@ -143,25 +144,25 @@ plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
 
 #%% 
 #RFI.plot_percentile(f,d,100,'dBm','MRO data, normalized with the minimum [dB]')
-title = 'MRO data normalized with polyfit'
-perc = 100
-RFI.plot_percentile(freq,b,perc,'dBm',title)
-title = title +'-'+ str(perc)+' percentile'
-plt.savefig(outdir+ title, dpi=100, bbox_inches='tight')
-
-title = 'MRO data'
-perc = 100
-RFI.plot_percentile(freq,data,perc,'dBm',title)
-title = title +'-'+ str(perc)+' percentile'
-plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
-
-title = 'MRO data'
-perc = 90
-RFI.plot_percentile(freq,data,perc,'dBm',title)
-title = title +'-'+ str(perc)+' percentile'
-plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
-
-
+#title = 'MRO data normalized with polyfit'
+#perc = 100
+#RFI.plot_percentile(freq,b,perc,'dBm',title)
+#title = title +'-'+ str(perc)+' percentile'
+#plt.savefig(outdir+ title, dpi=100, bbox_inches='tight')
+#
+#title = 'MRO data'
+#perc = 100
+#RFI.plot_percentile(freq,data,perc,'dBm',title)
+#title = title +'-'+ str(perc)+' percentile'
+#plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
+#
+#title = 'MRO data'
+#perc = 90
+#RFI.plot_percentile(freq,data,perc,'dBm',title)
+#title = title +'-'+ str(perc)+' percentile'
+#plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
+#
+#
 
 
 
