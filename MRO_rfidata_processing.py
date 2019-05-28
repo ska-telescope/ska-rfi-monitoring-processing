@@ -8,8 +8,9 @@ import matplotlib.pyplot as plt
 import RFI_general_functions as RFI
 import numpy as np
 import sys
+import os, os.path
 
-ubuntu =1
+ubuntu =0
 
 if ubuntu:
 # in ubuntu
@@ -30,16 +31,27 @@ def moving_average(a, n=3) :
 
 
 
-read_files = 1
+read_files = 0
 if read_files:
     print('reading files...')
     [freq,data] = RFI.read_MRO_data(indir,outdir)
     np.savez_compressed(outdir + r'MRO_rfidata_full', freq=freq, data=data)
     
 else:
-    Aux = np.load(outdir+r'MRO_rfidata_full.npz')
-    data = Aux['data']/10-107 #in V**2 originally, scaled to get to dBm
-    freq = Aux['freq'] # in MHz   
+    try:
+        Aux = np.load(outdir+r'MRO_rfidata_full.npz')
+        data = Aux['data']/10-107 #in V**2 originally, scaled to get to dBm
+        freq = Aux['freq'] # in MHz   
+    except:
+        files = os.listdir(outdir)
+        data = np.zeros([0,29801]).astype('float32')
+#        for i in range(len(files)): # comment for debug
+        for i in range(6):
+            if os.path.splitext(files[i])[1] == '.npz': 
+                Aux = np.load(outdir+files[i])
+                data = np.concatenate((data,Aux.get('data')/10-107),0) #in V**2 originally, scaled to get to dBm
+                freq = Aux['freq'] # in MHz   
+                
 
 #%%
 n_ave = 20
