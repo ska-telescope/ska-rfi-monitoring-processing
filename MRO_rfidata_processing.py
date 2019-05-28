@@ -88,31 +88,31 @@ plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
 
 
 
-#%%
-n_ave = 20
-b = np.array(data)
-d = np.array(data)
-c = np.array(data)
-#c = np.zeros([np.size(a,0),np.size(a,1)-(n_ave-1)])
-
-for i in range(len(data)):
-    blfit = 3
-    if blfit != 0:
-        # subtract an Nth order polynomial to remove baseline fluctuations
-        coeffs = np.polyfit(freq,data[i],blfit)
-        fit = np.poly1d(coeffs)(freq)
-#        print ("max spect residual: %0.1f" % np.sqrt(np.median((a[i]-fit)**2)))
-        b[i] = data[i] - fit
-        print (i)
-
+#%% polyfit filter.
 #
-#    ave = moving_average(a[i,:],n_ave)
-##    c[i,:] = a[i,19:] - ave
-#    c[i,:] = a[i,:] - ave
-    
-    miin = np.min(data,0)
-    d[i] = data[i]- miin
-    
+#b = np.array(data)
+#d = np.array(data)
+#c = np.array(data)
+##c = np.zeros([np.size(a,0),np.size(a,1)-(n_ave-1)])
+#
+#for i in range(len(data)):
+#    blfit = 3
+#    if blfit != 0:
+#        # subtract an Nth order polynomial to remove baseline fluctuations
+#        coeffs = np.polyfit(freq,data[i],blfit)
+#        fit = np.poly1d(coeffs)(freq)
+##        print ("max spect residual: %0.1f" % np.sqrt(np.median((a[i]-fit)**2)))
+#        b[i] = data[i] - fit
+#        print (i)
+#
+##
+##    ave = moving_average(a[i,:],n_ave)
+###    c[i,:] = a[i,19:] - ave
+##    c[i,:] = a[i,:] - ave
+#    
+#    miin = np.min(data,0)
+#    d[i] = data[i]- miin
+#    
 
 #%%
     
