@@ -13,7 +13,11 @@ import os, os.path
 ubuntu =0
 
 print(sys.argv[0])
-print(sys.argv[1])
+if len(sys.argv) < 1:
+    print('Need parameter Ubuntu =1 , Windows=0')
+    sys.exit(3)
+else:
+    ubuntu = sys.argv[1]
 
 
 if ubuntu:
