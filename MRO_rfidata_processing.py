@@ -52,6 +52,7 @@ else:
         freq = Aux['freq'] # in MHz   
     except:
         files = os.listdir(outdir)
+        print(files)
         data = np.zeros([0,29801]).astype('float32')
 #        for i in range(len(files)): # comment for debug
         for i in range(6):
