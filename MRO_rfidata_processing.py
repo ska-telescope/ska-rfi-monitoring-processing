@@ -55,7 +55,8 @@ else:
         data = np.zeros([0,29801]).astype('float32')
 #        for i in range(len(files)): # comment for debug
         for i in range(6):
-            if os.path.splitext(files[i])[1] == '.npz': 
+            if os.path.splitext(files[i])[1] == '.npz':
+                print(files[i])
                 Aux = np.load(outdir+files[i])
                 data = np.concatenate((data,Aux.get('data')/10-107),0) #in V**2 originally, scaled to get to dBm
                 freq = Aux['freq'] # in MHz   
