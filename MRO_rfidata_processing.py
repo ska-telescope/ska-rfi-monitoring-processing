@@ -12,6 +12,10 @@ import os, os.path
 
 ubuntu =0
 
+print(sys.argv[0])
+print(sys.argv[1])
+
+
 if ubuntu:
 # in ubuntu
     outdir = r'/mnt/data/MRO_rfidata/output/'
