@@ -52,20 +52,42 @@ else:
         freq = Aux['freq'] # in MHz   
     except:
         files = os.listdir(outdir)
-        print(files)
+#        print(files)
         data = np.zeros([0,29801]).astype('float32')
-#        for i in range(len(files)): # comment for debug
-        for i in range(6):
+        for i in range(len(files)): # comment for debug
+#        for i in range(6):
             if os.path.splitext(files[i])[1] == '.npz':
                 print(files[i])
                 Aux = np.load(outdir+files[i])
                 data = np.concatenate((data,Aux.get('data')/10-107),0) #in V**2 originally, scaled to get to dBm
                 freq = Aux['freq'] # in MHz   
-         
-ave = np.average(data,0)            
+
+#%% USe the data from 0 to 500 MHz
+fmin = 0
+fmax = 500
+D = data[:,(freq>=fmin) & (freq<=fmax)]
+
+ave = np.average(D,0)            
 plt.figure()
-plt.plot(freq,ave)
+plt.plot(freq[(freq>=fmin) & (freq<=fmax)],ave)
 plt.savefig(outdir+ 'Average_all', dpi=100, bbox_inches='tight')
+
+
+#plot percentiles 
+title = 'MRO data'
+perc = 100
+RFI.plot_percentile(freq[(freq>=fmin) & (freq<=fmax)],data,perc,'dBm',title)
+title = title +'-'+ str(perc)+' percentile'
+plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
+
+title = 'MRO data'
+perc = 90
+RFI.plot_percentile(freq[(freq>=fmin) & (freq<=fmax)],data,perc,'dBm',title)
+title = title +'-'+ str(perc)+' percentile'
+plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
+
+
+
 #%%
 n_ave = 20
 b = np.array(data)
