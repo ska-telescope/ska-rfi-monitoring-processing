@@ -66,17 +66,17 @@ def spectral_occupancy(freqs,D,outdir):
         for i in range(len(amps)):
         #for k in range(20): #for debug
         #    i = 200+k # for debuging
-            thresh = mini - np.average(mini) + np.average(amps[i]) + np.std(amps_min[i])*2
-            avg = np.average(amps_min[i])
-            median = np.median(amps_min[i])
-            std = np.std(amps_min[i])
+            thresh = mini - np.average(mini) + np.average(amps[i]) + np.std(amps_min[i])*3
+#            avg = np.average(amps_min[i])
+#            median = np.median(amps_min[i])
+#            std = np.std(amps_min[i])
             
-            aux_avg = (amps_min[i] > avg+3*std).astype(int)
-            aux_median = (amps_min[i] > median+3*std).astype(int)
+#            aux_avg = (amps_min[i] > avg+3*std).astype(int)
+#            aux_median = (amps_min[i] > median+3*std).astype(int)
             aux_thresh = (amps[i] > thresh).astype(int)
         
-            occup_avg += aux_avg
-            occup_median += aux_median
+#            occup_avg += aux_avg
+#            occup_median += aux_median
             occup_thresh += aux_thresh
         
         #    plt.figure() #for debug
@@ -87,16 +87,16 @@ def spectral_occupancy(freqs,D,outdir):
             print('min value baseline ' + str(i) + ' of ' + str(len(amps)))
     
     
-    occup_avg = 100.0 / len(D) * occup_avg
-    occup_median = 100.0 / len(D) * occup_median
+#    occup_avg = 100.0 / len(D) * occup_avg
+#    occup_median = 100.0 / len(D) * occup_median
     occup_thresh = 100.0 / len(D) * occup_thresh
     
     print ("Plotting...")
     
     fig, ax = plt.subplots()
-    ax.plot(freqs, occup_avg, 'r', label='Occupancy over average', linewidth=1)
-    ax.plot(freqs, occup_median, 'b', label='Occupancy over median', linewidth=1)
-    ax.plot(freqs, occup_thresh, 'g', label='Occupancy over threshold', linewidth=1)
+#    ax.plot(freqs, occup_avg, 'r', label='Occupancy over average', linewidth=1)
+#    ax.plot(freqs, occup_median, 'b', label='Occupancy over median', linewidth=1)
+    ax.plot(freqs, occup_thresh, 'g', label='Occupancy over threshold', linewidth=2)
     ax.set_xlabel("Frequency [MHz]")
     ax.set_ylabel("Occupancy [%]");
     ax.set_autoscaley_on(False)
@@ -111,7 +111,7 @@ def spectral_occupancy(freqs,D,outdir):
     fgnm = 'rfispectrum_occupancy_full_FDV'
     print ("Outputting spectrum occupancy plot %s" % fgnm)
     fout = '%s/%s' % (outdir, fgnm)
-    fig.savefig(fout, dpi=600, bbox_inches='tight')
+    fig.savefig(fout, dpi=300, bbox_inches='tight')
     plt.close()
     
     #plt.figure()
