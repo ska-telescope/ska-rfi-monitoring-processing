@@ -68,11 +68,11 @@ plt.savefig(outdir+ 'Average_all', dpi=100, bbox_inches='tight')
 #plot percentiles 
 title = 'MRO data'
 perc = 100
-RFI.plot_percentile(outdir,freqs,D,perc,'dBm',title)
+RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
 
 title = 'MRO data'
 perc = 90
-RFI.plot_percentile(outdir,freqs,D,perc,'dBm',title)
+RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
 
 
 
