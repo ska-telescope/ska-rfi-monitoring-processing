@@ -11,7 +11,10 @@ import matplotlib.pyplot as plt
 def plot_percentile(freq,data,percentile,outdir,dataunits='dBm',title=''):
     #the data is m x n and the m dimension will be used to calculate the percentile, so 
     #this must be the time dimension.
-    data_perc = np.percentile(data,percentile,axis=0)
+#    data_perc = np.percentile(data,percentile,axis=0)
+    data_sorted = np.sort(data)
+    index = int(len(data)*percentile/100)
+    data_perc = data_sorted(index) 
     plt.figure()
     if dataunits == 'dBm':
         plt.plot(freq,(data_perc))
