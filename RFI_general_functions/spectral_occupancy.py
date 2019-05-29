@@ -8,7 +8,7 @@ Occupancy in FDV's method:
 import numpy as np
 import matplotlib.pyplot as plt
 
-def spectral_occupancy(freqs,D,outdir):
+def spectral_occupancy(freqs,D,outdir,std_multiplier):
     N_chunk = int(len(D)/24)
     print ("Calculating FDV occupancy...")
     
@@ -66,7 +66,7 @@ def spectral_occupancy(freqs,D,outdir):
         for i in range(len(amps)):
         #for k in range(20): #for debug
         #    i = 200+k # for debuging
-            thresh = mini - np.average(mini) + np.average(amps[i]) + np.std(amps_min[i])*3
+            thresh = mini - np.average(mini) + np.average(amps[i]) + np.std(amps_min[i])*std_multiplier
 #            avg = np.average(amps_min[i])
 #            median = np.median(amps_min[i])
 #            std = np.std(amps_min[i])
