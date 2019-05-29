@@ -19,6 +19,6 @@ def plot_percentile(freq,data,percentile,outdir,dataunits='dBm',title=''):
         plt.plot(freq,10*np.log10(data_perc))
     plt.grid(True,'both')
     plt.title(str(percentile) + ' percentile - ' + title)
-    plt.savefig(outdir + str(percentile) + ' percentile - ' + title)
+    plt.savefig(outdir + str(percentile) + ' percentile - ' + title, dpi=600, bbox_inches='tight')
     return data_perc
     
