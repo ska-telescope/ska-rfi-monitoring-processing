@@ -143,7 +143,7 @@ RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
 
 #%% Calculate spectral occupancy
 
-S_occupancy =  RFI.spectral_occupancy(freqs,D,outdir,3)
+S_occupancy =  RFI.spectral_occupancy(freqs,D,outdir,1.5)
 
 #%% polyfit filter.
 #
