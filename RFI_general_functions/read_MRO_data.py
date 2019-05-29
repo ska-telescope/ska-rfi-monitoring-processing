@@ -9,7 +9,7 @@ import os, os.path
 import numpy as np
 from astropy.io import fits
 
-def read_MRO_data(indir,outdir,ext=='.fits'):
+def read_MRO_data(indir,outdir,ext='.fits'):
     # use ext = '.fits' if the files are decompressed
     # use ext = '.gz' if files are compressed (significantly more time)
     # this function does read ALL the files inside the input directory.
