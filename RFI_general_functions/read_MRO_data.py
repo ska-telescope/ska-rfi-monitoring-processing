@@ -9,10 +9,14 @@ import os, os.path
 import numpy as np
 from astropy.io import fits
 
-def read_MRO_data(indir,outdir):
-    files = os.listdir(indir)
+def read_MRO_data(indir,outdir,ext=='.fits'):
+    # use ext = '.fits' if the files are decompressed
+    # use ext = '.gz' if files are compressed (significantly more time)
+    # this function does read ALL the files inside the input directory.
     
-    data = np.zeros([0,29801]).astype('float32')
+    files = os.listdir(indir)
+    freq_points = 29801
+    data = np.zeros([0,freq_points]).astype('float32')
     N_files = np.size(files)
    
  
@@ -21,8 +25,7 @@ def read_MRO_data(indir,outdir):
 #    for i in range(2): #for debugging
 #        f = files[i] #for debugging
         fullpath = os.path.join(indir, f)
-#        if os.path.splitext(fullpath)[1] == '.gz':
-        if os.path.splitext(fullpath)[1] == '.fits':            
+        if os.path.splitext(fullpath)[1] == ext:            
            with fits.open(fullpath) as hdul:
                i+=1
                print(str(i)+' of '+str(N_files) + ' Fits files')
@@ -33,13 +36,13 @@ def read_MRO_data(indir,outdir):
                    try:
                        print(str(k)+' of '+str(N) + ' lines')
                        aux = hdul[k].data
-                       data = np.concatenate((data,np.reshape(aux['Amplitude'],[1,29801])),0) #gets the data matrix.
+                       data = np.concatenate((data,np.reshape(aux['Amplitude'],[1,freq_points])),0) #gets the data matrix.
                        
                    except:
                        A=1
                freq = aux['Frequency']
                np.savez_compressed(outdir + 'MRO_rfidata_' + str(i), freq=freq, data=data)
-               data = np.zeros([0,29801]).astype('float32')
+               data = np.zeros([0,freq_points]).astype('float32')
                        
     return [freq,data]
 

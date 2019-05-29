@@ -8,7 +8,7 @@ Created on Thu Apr 11 12:26:56 2019
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot_percentile(freq,data,percentile,dataunits='dBm',title=''):
+def plot_percentile(freq,data,percentile,outdir,dataunits='dBm',title=''):
     #the data is m x n and the m dimension will be used to calculate the percentile, so 
     #this must be the time dimension.
     data_perc = np.percentile(data,percentile,axis=0)
@@ -19,5 +19,6 @@ def plot_percentile(freq,data,percentile,dataunits='dBm',title=''):
         plt.plot(freq,10*np.log10(data_perc))
     plt.grid(True,'both')
     plt.title(str(percentile) + ' percentile - ' + title)
+    plt.savefig(outdir + str(percentile) + ' percentile - ' + title)
     return data_perc
     

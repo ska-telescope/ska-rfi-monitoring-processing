@@ -12,14 +12,6 @@ import os, os.path
 
 #%%
 ubuntu = 1
-#
-#print(sys.argv[0])
-#if len(sys.argv) <= 1:
-#    print('Need parameter Ubuntu =1 , Windows=0')
-#    sys.exit(3)
-#else:
-#    ubuntu = sys.argv[1]
-
 
 if ubuntu:
 # in ubuntu
@@ -31,26 +23,19 @@ else:
     outdir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\01- Australia\\rfidata_mro\\results\\'
 
 
-def moving_average(a, n=3) :
-    ret = np.cumsum(a, dtype='float32')
-    ret[n:] = ret[n:] - ret[:-n]
-    ret[0:n-1] = a[0:n-1]*n #try
-    #return ret[n - 1:] / n
-    return ret/ n
-
-
-
-read_files = 0
+#%% Read the files from disk
+read_files = 0 
 if read_files:
     print('reading files...')
     [freq,data] = RFI.read_MRO_data(indir,outdir)
+    # Save the full data loaded in one file:
     np.savez_compressed(outdir + r'MRO_rfidata_full', freq=freq, data=data)
     
 else:
     try:
         print('Loading the complete set of saved data...')
         Aux = np.load(outdir+r'MRO_rfidata_full.npz')
-        data = Aux['data']/10-107 #in V**2 originally, scaled to get to dBm
+        data = Aux['data']/10-107 #in V**2 originally, scaled to get to dBm, a guess on the calibration factor.
         freq = Aux['freq'] # in MHz   
     except:
         print('Failed...')

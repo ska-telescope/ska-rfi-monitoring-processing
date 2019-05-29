@@ -10,10 +10,8 @@ import matplotlib.pyplot as plt
 
 def spectral_occupancy(freqs,D,outdir,std_multiplier):
     N_chunk = int(len(D)/24)
-    print ("Calculating FDV occupancy...")
+    print ("Calculating occupancy...")
     
-    occup_avg = np.zeros(len(D[0]))
-    occup_median = np.zeros(len(D[0]))
     occup_thresh = np.zeros(len(D[0]))
     
     for i in range(25):
