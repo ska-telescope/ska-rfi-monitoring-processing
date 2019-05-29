@@ -146,7 +146,7 @@ plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
 
 #%% Calculate spectral occupancy
 
-S_occupancy =  RFI.spectral_occupancy(freqs,D,outdir,2)
+S_occupancy =  RFI.spectral_occupancy(freqs,D,outdir,3)
 
 #%% polyfit filter.
 #
