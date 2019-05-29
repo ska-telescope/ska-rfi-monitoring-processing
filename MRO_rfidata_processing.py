@@ -93,54 +93,54 @@ plt.savefig(outdir+title, dpi=100, bbox_inches='tight')
 
 
 #%% Occupancy in Balt's method:
-
-print ("Calculating occupancy...")
-occup = np.zeros(len(D[0]))
-
-freqs = np.array(freq[(freq>=fmin) & (freq<=fmax)])
-amps = np.array(D)
-blfit = 3
-
-for i in range(len(amps)):
-  if blfit != 0:
-    # subtract an Nth order polynomial to remove baseline fluctuations
-    coeffs = np.polyfit(freqs,amps[i],blfit)
-    fit = np.poly1d(coeffs)(freqs)
-    #print ("max spect residual: %0.1f" % np.sqrt(np.median((mspect-fit)**2))
-    amps[i] = amps[i] - fit
-    
-  print('polifit baseline ' + str(i) + ' of ' + str(len(amps)))
-  buffer = np.zeros(len(amps[0]))
-  avg = np.median(amps[i])
-  std = np.std(amps[i])
-  buffer = (amps[i] > avg+3*std).astype(int)
-  occup += buffer
-
-occup = 100.0 / len(amps) * occup
-
-print ("Plotting...")
-
-fig, ax = plt.subplots()
-ax.plot(freqs, occup, 'r', label='Occupancy', linewidth=1)
-#ax.plot(freqs[-1], aspect, 'g', label='Average', linewidth=1)
-ax.set_xlabel("Frequency [MHz]")
-ax.set_ylabel("Occupancy [%]");
-ax.set_autoscaley_on(False)
-ax.set_ylim([0, 100.0])
-ax.set_autoscalex_on(False)
-ax.set_xlim([freqs[0], freqs[-1]])
-ax.grid(1)
-fig.set_size_inches(30, 20)
-
-fgnm = 'rfispectrum_occupancy_full'
-print ("Outputting spectrum occupancy plot %s" % fgnm)
-fout = '%s/%s' % (outdir, fgnm)
-fig.savefig(fout, dpi=600, bbox_inches='tight')
-plt.close()
-
-#plt.figure()
-#plt.plot(freqs,np.transpose(amps))
-#plt.title('Polyfit baseline all measurements')
+#
+#print ("Calculating occupancy...")
+#occup = np.zeros(len(D[0]))
+#
+#freqs = np.array(freq[(freq>=fmin) & (freq<=fmax)])
+#amps = np.array(D)
+#blfit = 3
+#
+#for i in range(len(amps)):
+#  if blfit != 0:
+#    # subtract an Nth order polynomial to remove baseline fluctuations
+#    coeffs = np.polyfit(freqs,amps[i],blfit)
+#    fit = np.poly1d(coeffs)(freqs)
+#    #print ("max spect residual: %0.1f" % np.sqrt(np.median((mspect-fit)**2))
+#    amps[i] = amps[i] - fit
+#    
+#  print('polifit baseline ' + str(i) + ' of ' + str(len(amps)))
+#  buffer = np.zeros(len(amps[0]))
+#  avg = np.median(amps[i])
+#  std = np.std(amps[i])
+#  buffer = (amps[i] > avg+3*std).astype(int)
+#  occup += buffer
+#
+#occup = 100.0 / len(amps) * occup
+#
+#print ("Plotting...")
+#
+#fig, ax = plt.subplots()
+#ax.plot(freqs, occup, 'r', label='Occupancy', linewidth=1)
+##ax.plot(freqs[-1], aspect, 'g', label='Average', linewidth=1)
+#ax.set_xlabel("Frequency [MHz]")
+#ax.set_ylabel("Occupancy [%]");
+#ax.set_autoscaley_on(False)
+#ax.set_ylim([0, 100.0])
+#ax.set_autoscalex_on(False)
+#ax.set_xlim([freqs[0], freqs[-1]])
+#ax.grid(1)
+#fig.set_size_inches(30, 20)
+#
+#fgnm = 'rfispectrum_occupancy_full'
+#print ("Outputting spectrum occupancy plot %s" % fgnm)
+#fout = '%s/%s' % (outdir, fgnm)
+#fig.savefig(fout, dpi=600, bbox_inches='tight')
+#plt.close()
+#
+##plt.figure()
+##plt.plot(freqs,np.transpose(amps))
+##plt.title('Polyfit baseline all measurements')
 
 #%% Occupancy in FDV's method:
 
@@ -193,7 +193,7 @@ occup_thresh = np.zeros(len(amps[0]))
 for i in range(len(amps)):
 #for k in range(20): #for debug
 #    i = 200+k # for debuging
-    thresh = mini - np.average(mini) + np.average(amps[i]) + np.std(amps_min[i])*1.5
+    thresh = mini - np.average(mini) + np.average(amps[i]) + np.std(amps_min[i])*2
     avg = np.average(amps_min[i])
     median = np.median(amps_min[i])
     std = np.std(amps_min[i])
