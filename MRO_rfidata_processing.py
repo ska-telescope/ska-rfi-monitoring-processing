@@ -70,10 +70,24 @@ title = 'MRO data'
 perc = 100
 RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
 
+
+title = 'MRO data'
+perc = 98
+RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
+
+
+title = 'MRO data'
+perc = 95
+RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
+
+
 title = 'MRO data'
 perc = 90
 RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
 
+title = 'MRO data'
+perc = 50
+RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
 
 
 

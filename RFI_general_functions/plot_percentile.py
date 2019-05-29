@@ -13,7 +13,7 @@ def plot_percentile(freq,data,percentile,outdir,dataunits='dBm',title=''):
     #this must be the time dimension.
 #    data_perc = np.percentile(data,percentile,axis=0)
     data_sorted = np.sort(data)
-    index = int(len(data)*percentile/100)
+    index = int((len(data)-1)*percentile/100)
     data_perc = data_sorted[index] 
     plt.figure()
     if dataunits == 'dBm':
