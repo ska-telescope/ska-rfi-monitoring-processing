@@ -32,7 +32,7 @@ if read_files==2:
     print('reading files...')
     [freq,data] = RFI.read_MRO_data(indir,outdir)
     # Save the full data loaded in one file:
-    if int(print('Save npz file?\nYes(1) No(0): ')):
+    if int(input('Save npz file?\nYes(1) No(0): ')):
         np.savez_compressed(outdir + r'MRO_rfidata_full', freq=freq, data=data)
     
 elif read_files==1:
@@ -86,7 +86,7 @@ plt.savefig(outdir+ 'Average_all', dpi=100, bbox_inches='tight')
 
 #%% plot percentiles 
 print('Calculating 100 percentile')
-title = 'MRO data'
+title = 'MRO data '+str(int(fmin)) + ' to '+str(int(fmax)) + ' MHz'
 perc = 100
 RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
 
