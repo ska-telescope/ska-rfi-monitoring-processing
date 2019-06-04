@@ -27,7 +27,7 @@ else:
 
 #%% Read the files from disk
     
-read_files = input('---Input data--\n\nData in memory (0)\nRead saved npz file (1)\nRead Fits files (2)\n Selection: ')
+read_files = int(input('---Input data--\n\nData in memory (0)\nRead saved npz file (1)\nRead Fits files (2)\n Selection: '))
 if read_files==2:
     print('reading files...')
     [freq,data] = RFI.read_MRO_data(indir,outdir)
