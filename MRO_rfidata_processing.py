@@ -17,6 +17,7 @@ ubuntu = int(input('Select Ubuntu (1) or Windows (0) : '))
 
 if ubuntu:
 # in ubuntu
+    plt.close('all')
     outdir = r'/mnt/data/MRO_rfidata/MRO_rfidata_19_05_12/output/'
     indir = r'/mnt/data/MRO_rfidata/MRO_rfidata_19_05_12'
 else:
@@ -70,17 +71,23 @@ print('Calculating histogram')
 Pow = 10*np.log10(np.sum(10**(D/10),1))
 plt.figure()
 plt.hist(Pow,500)
+plt.xlabel('Ampl [dBm]')
 plt.savefig(outdir+ 'power_histogram_freq_'+str(int(fmin)) + 'to'+str(int(fmax))+'' , dpi=500, bbox_inches='tight')
 
 print('Calculating total power')
+time = np.linspace(0,len(Pow),len(Pow)+1)
 plt.figure()
-plt.plot(Pow)
+plt.plot(time/3600,Pow)
+plt.xlabel('time [hs]')
+plt.ylabel('Ampl [dBm]')
 plt.savefig(outdir+ 'total_power_freq_'+str(int(fmin)) + 'to'+str(int(fmax)) , dpi=500, bbox_inches='tight')
 
 print('Calculating Average')
 ave = np.average(D,0)            
 plt.figure()
 plt.plot(freqs,ave)
+plt.ylabel('Ampl [dBm]')
+plt.xlabel('freq [MHz]')
 plt.savefig(outdir+ 'Average_all', dpi=100, bbox_inches='tight')
 
 
