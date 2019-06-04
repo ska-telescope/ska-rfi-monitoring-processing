@@ -51,7 +51,7 @@ elif read_files==1:
             if os.path.splitext(files[i])[1] == '.npz':
                 print(files[i])
                 Aux = np.load(outdir+files[i])
-                data = np.concatenate((data,Aux.get('data')),0) #in V**2 originally, scaled to get to dBm
+                data = np.concatenate((data,Aux.get('data_file')),0) #in V**2 originally, scaled to get to dBm
                 freq = Aux['freq'] # in MHz   
         np.savez_compressed(outdir + r'MRO_rfidata_full', freq=freq, data=data)
 else:
