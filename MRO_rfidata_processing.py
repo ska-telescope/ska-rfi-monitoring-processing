@@ -15,8 +15,8 @@ ubuntu = 1
 
 if ubuntu:
 # in ubuntu
-    outdir = r'/mnt/data/MRO_rfidata/output/'
-    indir = r'/mnt/data/MRO_rfidata/'
+    outdir = r'/mnt/data/MRO_rfidata/MRO_rfidata_19_05_12/output/'
+    indir = r'/mnt/data/MRO_rfidata/MRO_rfidata_19_05_12'
 else:
 # in windows
     indir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\01- Australia\\rfidata_mro\\'
