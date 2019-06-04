@@ -10,8 +10,10 @@ import numpy as np
 import sys
 import os, os.path
 
+# Clear the screen
+os.system('cls' if os.name == 'nt' else 'clear')
 
-ubuntu = 1
+ubuntu = int(input('Select Ubuntu (1) or Windows (0) : '))
 
 if ubuntu:
 # in ubuntu
@@ -24,14 +26,15 @@ else:
 
 
 #%% Read the files from disk
-read_files =0 
-if read_files:
+    
+read_files = input('---Input data--\n\nData in memory (0)\nRead saved npz file (1)\nRead Fits files (2)\n Selection: ')
+if read_files==2:
     print('reading files...')
     [freq,data] = RFI.read_MRO_data(indir,outdir)
     # Save the full data loaded in one file:
     np.savez_compressed(outdir + r'MRO_rfidata_full', freq=freq, data=data)
     
-else:
+elif read_files==1:
     try:
         print('Loading the complete set of saved data...')
         Aux = np.load(outdir+r'MRO_rfidata_full.npz')
@@ -51,32 +54,37 @@ else:
                 data = np.concatenate((data,Aux.get('data')),0) #in V**2 originally, scaled to get to dBm
                 freq = Aux['freq'] # in MHz   
         np.savez_compressed(outdir + r'MRO_rfidata_full', freq=freq, data=data)
-
+else:
+    print('Data already in memory:\nData = %d lines x %d freq points' % (len(data),len(data[0])))
+    
 #%% TAke a subset of the frequency range
-fmin = 0
-fmax = 500
+fmin = float(input('Minimum freq to analyze (MHz): '))
+fmax = float(input('Maximum freq to analyze (MHz): '))
 D = data[:,(freq>=fmin) & (freq<=fmax)]/6.5-200 # scaling to match the levels calculated by gianni
 freqs = freq[(freq>=fmin) & (freq<=fmax)]
 
 
 #%% Calculate histogram
+print('Calculating histogram')
 Pow = 10*np.log10(np.sum(10**(D/10),1))
 plt.figure()
 plt.hist(Pow,500)
-plt.savefig(outdir+ 'power_histogram_freq_'+str(fmin) + 'to'+str(fmax) , dpi=500, bbox_inches='tight')
+plt.savefig(outdir+ 'power_histogram_freq_'+str(int(fmin)) + 'to'+str(int(fmax))+'' , dpi=500, bbox_inches='tight')
 
+print('Calculating total power')
 plt.figure()
 plt.plot(Pow)
-plt.savefig(outdir+ 'total_power_freq_'+str(fmin) + 'to'+str(fmax) , dpi=500, bbox_inches='tight')
+plt.savefig(outdir+ 'total_power_freq_'+str(int(fmin)) + 'to'+str(int(fmax)) , dpi=500, bbox_inches='tight')
 
-#%%
+print('Calculating Average')
 ave = np.average(D,0)            
 plt.figure()
 plt.plot(freqs,ave)
 plt.savefig(outdir+ 'Average_all', dpi=100, bbox_inches='tight')
 
 
-#plot percentiles 
+#%% plot percentiles 
+print('Calculating 100 percentile')
 title = 'MRO data'
 perc = 100
 RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
