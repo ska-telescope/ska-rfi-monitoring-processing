@@ -37,7 +37,7 @@ def read_MRO_data(indir,outdir,ext='.fits'):
                    try:
                        print(str(k)+' of '+str(N) + ' lines')
                        aux = hdul[k].data
-                       data_file = np.concatenate((data,np.reshape(aux['Amplitude'],[1,freq_points])),0) #gets the data matrix.
+                       data_file = np.concatenate((data_file,np.reshape(aux['Amplitude'],[1,freq_points])),0) #gets the data matrix.
                        
                    except:
                        A=1
