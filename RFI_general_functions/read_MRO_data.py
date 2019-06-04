@@ -17,7 +17,8 @@ def read_MRO_data(indir,outdir,ext='.fits'):
     files = os.listdir(indir)
     freq_points = 29801
     data = np.zeros([0,freq_points]).astype('float32')
-    data_file = np.zeros([0,freq_points]).astype('float32')
+#    data_file = np.zeros([0,freq_points]).astype('float32')
+    data_file = np.zeros([680,freq_points]).astype('float32')
     N_files = np.size(files)
    
  
@@ -32,20 +33,23 @@ def read_MRO_data(indir,outdir,ext='.fits'):
                print(str(i)+' of '+str(N_files) + ' Fits files')
                #               hdul.info()
                N = np.size(hdul)
+               j = 0
                for k in range(N):
 #               for k in range(2): #for debugging
                    try:
                        print(str(k)+' of '+str(N) + ' lines')
-                       aux = hdul[k].data
-                       data_file = np.concatenate((data_file,np.reshape(aux['Amplitude'],[1,freq_points])),0) #gets the data matrix.
+#                       aux = hdul[k].data
+                       data_file[j,:] = hdul[k].data['Amplitude']
+                       j+=1
+#                       data_file = np.concatenate((data_file,np.reshape(aux['Amplitude'],[1,freq_points])),0) #gets the data matrix.
                        
                    except:
                        A=1
-               freq = aux['Frequency']
+               freq = hdul[k].data['Frequency']
                print('Saving the file as npz...')
                np.savez_compressed(outdir + 'MRO_rfidata_' + str(i), freq=freq, data_file=data_file)
                data = np.concatenate((data,data_file),0)
-               data_file = np.zeros([0,freq_points]).astype('float32')
+#               data_file = np.zeros([0,freq_points]).astype('float32')
                
                        
     return [freq,data]
