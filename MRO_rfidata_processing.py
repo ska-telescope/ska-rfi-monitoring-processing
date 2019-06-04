@@ -11,7 +11,7 @@ import sys
 import os, os.path
 
 # Clear the screen
-os.system('cls' if os.name == 'nt' else 'clear')
+os.system('clear')
 
 ubuntu = int(input('Select Ubuntu (1) or Windows (0) : '))
 
