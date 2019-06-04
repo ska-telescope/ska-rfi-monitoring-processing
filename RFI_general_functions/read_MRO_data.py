@@ -47,7 +47,7 @@ def read_MRO_data(indir,outdir,ext='.fits'):
                        A=1
                freq = hdul[k].data['Frequency']
                print('Saving the file as npz...')
-               np.savez_compressed(outdir + 'MRO_rfidata_' + str(i), freq=freq, data_file=data_file)
+#               np.savez_compressed(outdir + 'MRO_rfidata_' + str(i), freq=freq, data_file=data_file)
                data = np.concatenate((data,data_file),0)
 #               data_file = np.zeros([0,freq_points]).astype('float32')
                
