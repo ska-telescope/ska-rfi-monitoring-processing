@@ -24,7 +24,7 @@ else:
 
 
 #%% Read the files from disk
-read_files =1 
+read_files =0 
 if read_files:
     print('reading files...')
     [freq,data] = RFI.read_MRO_data(indir,outdir)
