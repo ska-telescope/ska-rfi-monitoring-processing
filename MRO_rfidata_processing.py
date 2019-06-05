@@ -78,30 +78,34 @@ else:
     print('Data already in memory:\nData = %d lines x %d freq points' % (len(data),len(data[0])))
     
 #%% TAke a subset of the frequency range
-fmin = float(input('Minimum freq to analyze (MHz): '))
-fmax = float(input('Maximum freq to analyze (MHz): '))
-D = data[:,(freq>=fmin) & (freq<=fmax)]/6.5-200 # scaling to match the levels calculated by gianni
-freqs = freq[(freq>=fmin) & (freq<=fmax)]
-Pow = 10*np.log10(np.sum(10**(D/10),1))
+    
+selection = input('\n\nSelect action:\n1: change frequency range\n2: Histogram\n3: Integrated Power\n4: Average\n5: Percentiles\n6: Occupancy\n0: exit\n\nSelect: ')
+init = 1    
+while selection != '0':
+    if init: 
+        selection = '1'
+        init = 0
+    if selection == '1': #Change freq range
+        fmin = float(input('Minimum freq to analyze (MHz): '))
+        fmax = float(input('Maximum freq to analyze (MHz): '))
+        D = data[:,(freq>=fmin) & (freq<=fmax)]/6.5-200 # scaling to match the levels calculated by gianni
+        freqs = freq[(freq>=fmin) & (freq<=fmax)]
+        Pow = 10*np.log10(np.sum(10**(D/10),1))
+        print('Done')
 
+    if selection == '2': #Histogram
+        print('Calculating histogram of the integrated power in %d to %d MHz' %(fmin,fmax))
+        plt.figure()
+        plt.hist(Pow,500)
+        plt.xlabel('Ampl [dBm]')
+        plt.savefig(outdir+ 'power_histogram_'+str(int(fmin)) + 'to'+str(int(fmax))+' MHz' , dpi=500, bbox_inches='tight')
 
-#%% Calculate histogram
-
-if input('Calculate histogram? (enter=no)') != '':
-    print('Calculating histogram')
-    plt.figure()
-    plt.hist(Pow,500)
-    plt.xlabel('Ampl [dBm]')
-    plt.savefig(outdir+ 'power_histogram_freq_'+str(int(fmin)) + 'to'+str(int(fmax))+'' , dpi=500, bbox_inches='tight')
-
-if input('Calculate integrated power? (enter=no)') != '':
-    timestart = input('Start time (enter for 0): ')
-    timestop = input('Start time (enter for tmax, x to continue): ')
-    t_step = 1200/680
-    tmax = (len(Pow)-1)*t_step
-    time = np.linspace(0,tmax,len(Pow))
-        
-    while  timestop != 'x':
+    if selection == '3': #Total power
+        timestart = input('Start time in sec (enter for 0): ')
+        timestop = input('End time in sec (enter for tmax): ')
+        t_step = 1200/680
+        tmax = (len(Pow)-1)*t_step
+        time = np.linspace(0,tmax,len(Pow))
         print('Calculating total power...')
         
         if timestart == '':
@@ -125,51 +129,30 @@ if input('Calculate integrated power? (enter=no)') != '':
         plt.title(title)
         plt.savefig(outdir+title , dpi=500, bbox_inches='tight')
         print('Done')
-        timestart = input('Start time (enter for 0): ')
-        timestop = input('Start time (enter for tmax, x to continue): ')
 
 
-if input('Calculate Average? (enter=no)') != '':
-    print('Calculating Average')
-    ave = np.average(D,0)            
-    plt.figure()
-    plt.plot(freqs,ave)
-    plt.ylabel('Ampl [dBm]')
-    plt.xlabel('freq [MHz]')
-    plt.savefig(outdir+ 'Average_all', dpi=100, bbox_inches='tight')
+    if selection == '4': #Average
+        print('Calculating Average')
+        ave = np.average(D,0)            
+        plt.figure()
+        plt.plot(freqs,ave)
+        plt.ylabel('Ampl [dBm]')
+        plt.xlabel('freq [MHz]')
+        plt.savefig(outdir+ 'Average_all', dpi=100, bbox_inches='tight')
 
 
-if input('Calculate percentile? (enter=no)') != '':
-    perc = input('Percentile? (x to exit): ')
-    while  perc != 'x':
+    if selection == '5': #Percentiles
+        perc = input('Percentile = ')
+
         print('Calculating %s percentile' % (perc))
         
-        title = 'MRO data '+str(int(fmin)) + ' to '+str(int(fmax)) + ' MHz'
+        title = 'MRO data '+str(int(fmin)) + ' to '+str(int(fmax)) + ' MHz' 
         perc = int(perc)
         RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
-        perc = input('Percentile? (x to exit): ')
+
+ 
+    if selection == '6': #Total power
+        S_occupancy =  RFI.spectral_occupancy(freqs,D,outdir,1.5)
     
-#
-#title = 'MRO data'
-#perc = 98
-#RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
-#
-#
-#title = 'MRO data'
-#perc = 95
-#RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
-#
-#
-#title = 'MRO data'
-#perc = 90
-#RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
-#
-#title = 'MRO data'
-#perc = 50
-#RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
-#
-
-#%% Calculate spectral occupancy
-
-#S_occupancy =  RFI.spectral_occupancy(freqs,D,outdir,1.5)
-
+    os.system('clear')        
+    selection = input('\n\nSelect action:\n1: change frequency range\n2: Histogram\n3: Integrated Power\n4: Average\n5: Percentiles\n6: Occupancy\n0: exit\n\nSelect: ')
