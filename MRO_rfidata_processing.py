@@ -77,7 +77,7 @@ if input('Calculate histogram? (enter=no)') != '':
 
 if input('Calculate integrated power? (enter=no)') != '':
     print('Calculating total power...')
-    t_step = 1200/len(Pow)
+    t_step = 1200/680
     tmax = (len(Pow)-1)*t_step
     time = np.linspace(0,tmax,len(Pow))
     
