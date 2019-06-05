@@ -17,12 +17,13 @@ def spectral_occupancy(freqs,D,outdir,std_multiplier):
     for i in range(24):
         try:
             D1 = D[i*N_chunk:(i+1)*N_chunk]        
-            print ("Chunk : " + str(i) + ' of 24')     
+            print ("Chunk : " + str(i) + ' of 24')
+            print(str(len(D1)))
         except:
             D1 = D[i*N_chunk::]
             print ("Last chunk")     
            
-        print(str(len(D1)))
+        
         amps = np.array(D1)
         
         # calculate the envelope of the data:
