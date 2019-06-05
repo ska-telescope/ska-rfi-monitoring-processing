@@ -67,43 +67,52 @@ freqs = freq[(freq>=fmin) & (freq<=fmax)]
 
 
 #%% Calculate histogram
-print('Calculating histogram')
-Pow = 10*np.log10(np.sum(10**(D/10),1))
-plt.figure()
-plt.hist(Pow,500)
-plt.xlabel('Ampl [dBm]')
-plt.savefig(outdir+ 'power_histogram_freq_'+str(int(fmin)) + 'to'+str(int(fmax))+'' , dpi=500, bbox_inches='tight')
+if input('Calculate histogram? (enter=no)') != '':
+    print('Calculating histogram')
+    Pow = 10*np.log10(np.sum(10**(D/10),1))
+    plt.figure()
+    plt.hist(Pow,500)
+    plt.xlabel('Ampl [dBm]')
+    plt.savefig(outdir+ 'power_histogram_freq_'+str(int(fmin)) + 'to'+str(int(fmax))+'' , dpi=500, bbox_inches='tight')
 
-print('Calculating total power')
-if input('Change time duration?') != '':
-    tmax = int(input('Tmax [sec] :  '))
-else:
-    tmax = len(Pow)*1.8
+if input('Calculate integrated power? (enter=no)') != '':
+    print('Calculating total power...')
+    t_step = 1200/len(Pow)
+    tmax = (len(Pow)-1)*t_step
+    time = np.linspace(0,tmax,len(Pow))
     
-t_step = 1200/len(Pow)
-time = np.linspace(0,(len(Pow)-1)*t_step,len(Pow))
+    if input('Change time duration?') != '':
+        tmax = int(input('Tmax [sec] :  '))
+    
+    time2 = time[(time<=tmax)]
+    Pow2 = Pow[(time<=tmax)]
+        
+    plt.figure()
+    plt.plot(time2/3600,Pow2)
+    plt.xlabel('time [hs]')
+    plt.ylabel('Ampl [dBm]')
+    plt.savefig(outdir+ 'total_power_freq_'+str(int(fmin)) + 'to'+str(int(fmax)) , dpi=500, bbox_inches='tight')
 
-plt.figure()
-plt.plot(time/3600,Pow)
-plt.xlabel('time [hs]')
-plt.ylabel('Ampl [dBm]')
-plt.savefig(outdir+ 'total_power_freq_'+str(int(fmin)) + 'to'+str(int(fmax)) , dpi=500, bbox_inches='tight')
-
-print('Calculating Average')
-ave = np.average(D,0)            
-plt.figure()
-plt.plot(freqs,ave)
-plt.ylabel('Ampl [dBm]')
-plt.xlabel('freq [MHz]')
-plt.savefig(outdir+ 'Average_all', dpi=100, bbox_inches='tight')
+if input('Calculate Average? (enter=no)') != '':
+    print('Calculating Average')
+    ave = np.average(D,0)            
+    plt.figure()
+    plt.plot(freqs,ave)
+    plt.ylabel('Ampl [dBm]')
+    plt.xlabel('freq [MHz]')
+    plt.savefig(outdir+ 'Average_all', dpi=100, bbox_inches='tight')
 
 
-#%% plot percentiles 
-print('Calculating 100 percentile')
-title = 'MRO data '+str(int(fmin)) + ' to '+str(int(fmax)) + ' MHz'
-perc = 100
-RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
-
+if input('Calculate percentile? (enter=no)') != '':
+    perc = input('Percentile? (x to exit): ')
+    while  perc != 'x':
+        print('Calculating %s percentile' % (perc))
+        
+        title = 'MRO data '+str(int(fmin)) + ' to '+str(int(fmax)) + ' MHz'
+        perc = int(perc)
+        RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
+        perc = input('Percentile? (x to exit): ')
+    
 #
 #title = 'MRO data'
 #perc = 98
