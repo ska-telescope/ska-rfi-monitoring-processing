@@ -98,7 +98,8 @@ while selection != '0':
         plt.figure()
         plt.hist(Pow,500)
         plt.xlabel('Ampl [dBm]')
-        plt.savefig(outdir+ 'power_histogram_'+str(int(fmin)) + 'to'+str(int(fmax))+' MHz' , dpi=500, bbox_inches='tight')
+        plt.grid()
+        plt.savefig(outdir+ 'power_histogram_'+str(int(fmin)) + 'to'+str(int(fmax))+' MHz' , dpi=600, bbox_inches='tight')
 
     if selection == '3': #Total power
         timestart = input('Start time in sec (enter for 0): ')
@@ -127,7 +128,8 @@ while selection != '0':
         plt.ylabel('Ampl [dBm]')
         title = 'total_power_'+str(tmin)+'sec_to_'+str(int(tmax))+'sec_'+str(int(fmin)) + 'to'+str(int(fmax))+'MHz'
         plt.title(title)
-        plt.savefig(outdir+title , dpi=500, bbox_inches='tight')
+        plt.grid()
+        plt.savefig(outdir+title , dpi=600, bbox_inches='tight')
         print('Done')
 
 
@@ -138,7 +140,8 @@ while selection != '0':
         plt.plot(freqs,ave)
         plt.ylabel('Ampl [dBm]')
         plt.xlabel('freq [MHz]')
-        plt.savefig(outdir+ 'Average_all', dpi=100, bbox_inches='tight')
+        plt.grid()
+        plt.savefig(outdir+ 'Average_all', dpi=600, bbox_inches='tight')
 
 
     if selection == '5': #Percentiles

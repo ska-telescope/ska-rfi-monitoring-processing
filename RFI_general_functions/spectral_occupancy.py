@@ -108,10 +108,10 @@ def spectral_occupancy(freqs,D,outdir,std_multiplier):
     fig.set_size_inches(30, 20)
     
     
-    fgnm = 'rfispectrum_occupancy_full_FDV'
+    fgnm = 'RFI_occupancy_%d to %d' % (int(freqs[0]),int(freqs[-1]))
     print ("Outputting spectrum occupancy plot %s" % fgnm)
-    fout = '%s/%s' % (outdir, fgnm)
-    fig.savefig(fout, dpi=300, bbox_inches='tight')
+    fout = '%s%s' % (outdir, fgnm)
+    fig.savefig(fout, dpi=500, bbox_inches='tight')
     plt.close()
     
     #plt.figure()
