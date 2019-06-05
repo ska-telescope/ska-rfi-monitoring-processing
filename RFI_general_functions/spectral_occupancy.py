@@ -14,7 +14,7 @@ def spectral_occupancy(freqs,D,outdir,std_multiplier):
     
     occup_thresh = np.zeros(len(D[0]))
     
-    for i in range(25):
+    for i in range(24):
         try:
             D1 = D[i*N_chunk:(i+1)*N_chunk]        
             print ("Chunk : " + str(i) + ' of 24')     
