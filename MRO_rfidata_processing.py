@@ -75,7 +75,12 @@ plt.xlabel('Ampl [dBm]')
 plt.savefig(outdir+ 'power_histogram_freq_'+str(int(fmin)) + 'to'+str(int(fmax))+'' , dpi=500, bbox_inches='tight')
 
 print('Calculating total power')
-time = np.linspace(0,len(Pow),len(Pow)+1)
+if input('Change time duration?') != '':
+    tmax = int(input('Tmax [sec] :  '))
+else:
+    tmax = len(Pow)*1.8
+time = np.linspace(0,len(Pow)*1.8,len(Pow)+1)
+
 plt.figure()
 plt.plot(time/3600,Pow)
 plt.xlabel('time [hs]')
