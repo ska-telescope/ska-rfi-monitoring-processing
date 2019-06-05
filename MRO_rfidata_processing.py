@@ -115,10 +115,10 @@ if input('Calculate integrated power? (enter=no)') != '':
         Pow2 = Pow[(time>tmin) & (time<=tmax)]
             
         plt.figure()
-        plt.plot(time2/3600,Pow2)
-        plt.xlabel('time [hs]')
+        plt.plot(time2,Pow2)
+        plt.xlabel('time [seconds]')
         plt.ylabel('Ampl [dBm]')
-        plt.savefig(outdir+ 'total_power_freq_'+str(int(fmin)) + 'to'+str(int(fmax)) , dpi=500, bbox_inches='tight')
+        plt.savefig(outdir+ 'total_power_'+str(tmin)+'sec_to_'+str(tmax)+'sec_'+str(int(fmin)) + 'to'+str(int(fmax))+'MHz' , dpi=500, bbox_inches='tight')
         print('Done')
         timestart = input('Start time (enter for 0): ')
         timestop = input('Start time (enter for tmax, x to continue): ')
