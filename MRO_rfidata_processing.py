@@ -14,8 +14,11 @@ import os, os.path
 
 # tmux to use a deaachable console.
 # python3 to load the interactive python (so that the data remains in memory)
+# subprocess.run(["git","pull"])
+# exec(open("./MRO_rfidata_processing.py").read())
 # subprocess.run(["git","pull"]) to use githul pull
-# exec(open(".MRO_rfidata_processing.py").read()) to execute the script from the interactive python.
+# exec(open("./MRO_rfidata_processing.py").read()) to execute the script from the interactive python.
+
 
 
 # Clear the screen
@@ -118,7 +121,9 @@ if input('Calculate integrated power? (enter=no)') != '':
         plt.plot(time2,Pow2)
         plt.xlabel('time [seconds]')
         plt.ylabel('Ampl [dBm]')
-        plt.savefig(outdir+ 'total_power_'+str(tmin)+'sec_to_'+str(tmax)+'sec_'+str(int(fmin)) + 'to'+str(int(fmax))+'MHz' , dpi=500, bbox_inches='tight')
+        title = 'total_power_'+str(tmin)+'sec_to_'+str(int(tmax))+'sec_'+str(int(fmin)) + 'to'+str(int(fmax))+'MHz'
+        plt.title(title)
+        plt.savefig(outdir+title , dpi=500, bbox_inches='tight')
         print('Done')
         timestart = input('Start time (enter for 0): ')
         timestop = input('Start time (enter for tmax, x to continue): ')
