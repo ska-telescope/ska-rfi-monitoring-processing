@@ -24,22 +24,23 @@ def Signal(Name,SamplingFreq,rand_phase=0, rand_displace=0):
     if Name == 'DME':
         period = 1*ms # periodicity of the signal
         offset = 100*us
-        fc = 100*MHz
+        fc = 1000*MHz
         Bw = 1*MHz
         t = np.linspace(-period/2,period/2,period*SamplingFreq)
 
         [k,env1] = Sig.gausspulse(t,fc,Bw/fc,retenv=1) #envolvent of the gauss pulse
         env2 = np.roll(env1,int(offset*SamplingFreq)) #envolvent shifted in time to generate the second pulse.
+        t = np.linspace(0,period,period*SamplingFreq)
         env = env1 + env2
 
     if Name == 'ADS-B':
         # 
         Ton = 120*us
-        fc = 100*MHz #1090*MHz
+        fc = 1090*MHz #1090*MHz
         period = 1*ms # periodicity of the signal
         
-        Trise = 0.05*us
-        Tfall = 0.05*us
+        Trise = 0.1*us
+        Tfall = 0.1*us
         Tpulse = 0.5*us-Trise-Tfall
         pulse_env = np.concatenate((np.linspace(0,1,int(Trise*SamplingFreq)) \
                                     ,np.ones(int(Tpulse*SamplingFreq)) \
@@ -206,12 +207,12 @@ plt.plot(f_fft,10*np.log10(P_fft*1e3))
 # With noise
 # Summing the noise to the signal train
 
-sig = 1/10
+sig = 1/100
 mu = 0
 Noise = Gauss_Noise(t1,fs,sig,mu)
-S1 = S1 + Noise
+S_ADSB = S1 
 plt.figure()
-plt.plot(t1,S1)
+plt.plot(t1,S_ADSB)
 
     
     
@@ -227,10 +228,32 @@ plt.plot(t1,S2)
 plt.plot(t1,S3)
 
 
-[t1,S1] = gen_signal_train('DME',5000*MHz,5)
+[t1,S_DME] = gen_signal_train('DME',5000*MHz,5)
 plt.figure()
-plt.plot(t1,S1)
+plt.plot(t1,S_DME)
 
+
+#%% ADS-B + DME
+# With noise
+# Summing the noise to the signal train
+
+L1 = len(S_ADSB)
+L2 = len(S_DME)
+L = min(L1,L2)
+S_multiple = S_ADSB[0:L] + S_DME[0:L] + Noise[0:L]
+t = t1[0:L]
+
+plt.figure()
+plt.plot(t*1e6,S_multiple)
+plt.xlabel('microsec')
+
+N = len(S_multiple)
+P_fft = np.abs(np.fft.fftshift(np.fft.fft(S_multiple)/N))**2/50
+f_fft = np.fft.fftshift(np.fft.fftfreq(N, d=1/fs))
+
+plt.figure()
+plt.plot(f_fft,10*np.log10(P_fft*1e3))
+plt.title('FFT of the multiple signal ADS-B + DME')
 
 #%% vuelos simulados avion.
 
