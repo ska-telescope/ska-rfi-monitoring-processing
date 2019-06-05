@@ -22,7 +22,7 @@ def spectral_occupancy(freqs,D,outdir,std_multiplier):
             D1 = D[i*N_chunk::]
             print ("Last chunk")     
            
-        print(len(D1))
+        print(str(len(D1)))
         amps = np.array(D1)
         
         # calculate the envelope of the data:
@@ -39,8 +39,8 @@ def spectral_occupancy(freqs,D,outdir,std_multiplier):
         #divide the frequency range in 5 MHz chunks
         step =5
         N = int((freqs[-1]-freqs[0])/step)
-        for i in range(N):
-            Frange=[freqs[0]+i*step,freqs[0]+i*step+step]
+        for k in range(N):
+            Frange=[freqs[0]+k*step,freqs[0]+k*step+step]
         #    Frange=[freqs[i],freqs[i]+step]
             A_aux = mini[(freqs>=Frange[0]) & (freqs<=Frange[1])]
             F_aux = freqs[(freqs>=Frange[0]) & (freqs<=Frange[1])]
@@ -61,17 +61,17 @@ def spectral_occupancy(freqs,D,outdir,std_multiplier):
         amps_min = amps - mini
         
         
-        for i in range(len(amps)):
+        for k in range(len(amps)):
         #for k in range(20): #for debug
         #    i = 200+k # for debuging
-            thresh = mini - np.average(mini) + np.average(amps[i]) + np.std(amps_min[i])*std_multiplier
+            thresh = mini - np.average(mini) + np.average(amps[k]) + np.std(amps_min[k])*std_multiplier
 #            avg = np.average(amps_min[i])
 #            median = np.median(amps_min[i])
 #            std = np.std(amps_min[i])
             
 #            aux_avg = (amps_min[i] > avg+3*std).astype(int)
 #            aux_median = (amps_min[i] > median+3*std).astype(int)
-            aux_thresh = (amps[i] > thresh).astype(int)
+            aux_thresh = (amps[k] > thresh).astype(int)
         
 #            occup_avg += aux_avg
 #            occup_median += aux_median
@@ -82,7 +82,7 @@ def spectral_occupancy(freqs,D,outdir,std_multiplier):
         #    plt.plot(freqs,thresh)
         #    plt.plot(freqs,mini)
         
-            print('min value baseline ' + str(i) + ' of ' + str(len(amps)))
+            print('min value baseline ' + str(k) + ' of ' + str(len(amps)))
     
     
 #    occup_avg = 100.0 / len(D) * occup_avg
