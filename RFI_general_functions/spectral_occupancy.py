@@ -105,7 +105,7 @@ def spectral_occupancy(freqs,D,outdir,std_multiplier):
     ax.set_xlim([freqs[0], freqs[-1]])
     ax.grid(1)
     
-    fig.set_size_inches(30, 20)
+#    fig.set_size_inches(10, 20)
     
     
     fgnm = 'RFI_occupancy_%d to %d' % (int(freqs[0]),int(freqs[-1]))

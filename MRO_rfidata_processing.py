@@ -78,19 +78,37 @@ else:
     print('Data already in memory:\nData = %d lines x %d freq points' % (len(data),len(data[0])))
     
 #%% TAke a subset of the frequency range
+t_step = 1200/680
+tmax = (len(data)-1)*t_step
+time1 = np.linspace(0,tmax,len(data))
     
-selection = input('\n\nSelect action:\n1: change frequency range\n2: Histogram\n3: Integrated Power\n4: Average\n5: Percentiles\n6: Occupancy\n0: exit\n\nSelect: ')
+selection = input('\n\nSelect action:\n1: change frequency and time range\n2: Histogram\n3: Integrated Power\n4: Average\n5: Percentiles\n6: Occupancy\n0: exit\n\nSelect: ')
 init = 1    
 while selection != '0':
     if init: 
         selection = '1'
         init = 0
-    if selection == '1': #Change freq range
+    if selection == '1': #Change freq range and time
         fmin = float(input('Minimum freq to analyze (MHz): '))
         fmax = float(input('Maximum freq to analyze (MHz): '))
-        D = data[:,(freq>=fmin) & (freq<=fmax)]/6.5-200 # scaling to match the levels calculated by gianni
+        timestart = input('Start time in sec (enter for 0): ')
+        timestop = input('End time in sec (enter for tmax): ')
+               
+        if timestart == '':
+            tmin =  0
+        else:
+            tmin = int(timestart)
+        if timestop == '':
+            tmax =  time1[-1]
+        else:
+            tmax = int(timestop)        
+
+        Daux = data[:,(freq>=fmin) & (freq<=fmax)]/6.5-200 # scaling to match the levels calculated by gianni
+        D = Daux[(time1>=tmin) & (time1<=tmax),:]
+        Pow = 10*np.log10(np.sum(10**(D/10),1))       
         freqs = freq[(freq>=fmin) & (freq<=fmax)]
-        Pow = 10*np.log10(np.sum(10**(D/10),1))
+        time = time1[(time1>=tmin) & (time1<=tmax)]
+
         print('Done')
 
     if selection == '2': #Histogram
@@ -102,28 +120,26 @@ while selection != '0':
         plt.savefig(outdir+ 'power_histogram_'+str(int(fmin)) + 'to'+str(int(fmax))+' MHz' , dpi=600, bbox_inches='tight')
 
     if selection == '3': #Total power
-        timestart = input('Start time in sec (enter for 0): ')
-        timestop = input('End time in sec (enter for tmax): ')
-        t_step = 1200/680
-        tmax = (len(Pow)-1)*t_step
-        time = np.linspace(0,tmax,len(Pow))
+        #timestart = input('Start time in sec (enter for 0): ')
+        #timestop = input('End time in sec (enter for tmax): ')
+
         print('Calculating total power...')
         
-        if timestart == '':
-            tmin =  0
-        else:
-            tmin = int(timestart)
-
-        if timestop == '':
-            tmax =  time[-1]
-        else:
-            tmax = int(timestop)
-        
-        time2 = time[(time>tmin) & (time<=tmax)]
-        Pow2 = Pow[(time>tmin) & (time<=tmax)]
+#        if timestart == '':
+#            tmin =  0
+#        else:
+#            tmin = int(timestart)
+#
+#        if timestop == '':
+#            tmax =  time[-1]
+#        else:
+#            tmax = int(timestop)
+#        
+#        time2 = time[(time>tmin) & (time<=tmax)]
+#        Pow2 = Pow[(time>tmin) & (time<=tmax)]
             
         plt.figure()
-        plt.plot(time2,Pow2)
+        plt.plot(time,Pow)
         plt.xlabel('time [seconds]')
         plt.ylabel('Ampl [dBm]')
         title = 'total_power_'+str(tmin)+'sec_to_'+str(int(tmax))+'sec_'+str(int(fmin)) + 'to'+str(int(fmax))+'MHz'
@@ -154,8 +170,9 @@ while selection != '0':
         RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
 
  
-    if selection == '6': #Total power
+    if selection == '6': #Occupancy
         S_occupancy =  RFI.spectral_occupancy(freqs,D,outdir,1.5)
     
+        
     os.system('clear')        
     selection = input('\n\nSelect action:\n1: change frequency range\n2: Histogram\n3: Integrated Power\n4: Average\n5: Percentiles\n6: Occupancy\n0: exit\n\nSelect: ')
