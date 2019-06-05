@@ -10,10 +10,23 @@ import numpy as np
 import sys
 import os, os.path
 
+#Commands to run in Ubuntu server:
+# tmux to use a deaachable console.
+# python3 to load the interactive python (so that the data remains in memory)
+# excec() to use githul pull
+# subprocess() 
+
 # Clear the screen
 os.system('clear')
 
-ubuntu = int(input('Select Ubuntu (1) or Windows (0) : '))
+if os.name == 'posix':
+    print('Using Ubuntu settings')
+    ubuntu = 1
+if os.name == 'nt':
+    print('Using Windows settings')
+    ubuntu = 0
+    
+#ubuntu = int(input('Select Ubuntu (1) or Windows (0) : '))
 
 if ubuntu:
 # in ubuntu
