@@ -11,10 +11,12 @@ import sys
 import os, os.path
 
 #Commands to run in Ubuntu server:
+
 # tmux to use a deaachable console.
 # python3 to load the interactive python (so that the data remains in memory)
-# excec() to use githul pull
-# subprocess() 
+# subprocess.run(["git","pull"]) to use githul pull
+# exec(open(".MRO_rfidata_processing.py").read()) to execute the script from the interactive python.
+
 
 # Clear the screen
 os.system('clear')
