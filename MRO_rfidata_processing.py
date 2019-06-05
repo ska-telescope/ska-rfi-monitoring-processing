@@ -79,7 +79,9 @@ if input('Change time duration?') != '':
     tmax = int(input('Tmax [sec] :  '))
 else:
     tmax = len(Pow)*1.8
-time = np.linspace(0,len(Pow)*1.8,len(Pow)+1)
+    
+t_step = 1200/len(Pow)
+time = np.linspace(0,(len(Pow)-1)*t_step,len(Pow))
 
 plt.figure()
 plt.plot(time/3600,Pow)
