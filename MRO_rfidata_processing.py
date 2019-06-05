@@ -64,34 +64,50 @@ fmin = float(input('Minimum freq to analyze (MHz): '))
 fmax = float(input('Maximum freq to analyze (MHz): '))
 D = data[:,(freq>=fmin) & (freq<=fmax)]/6.5-200 # scaling to match the levels calculated by gianni
 freqs = freq[(freq>=fmin) & (freq<=fmax)]
+Pow = 10*np.log10(np.sum(10**(D/10),1))
 
 
 #%% Calculate histogram
+
 if input('Calculate histogram? (enter=no)') != '':
     print('Calculating histogram')
-    Pow = 10*np.log10(np.sum(10**(D/10),1))
     plt.figure()
     plt.hist(Pow,500)
     plt.xlabel('Ampl [dBm]')
     plt.savefig(outdir+ 'power_histogram_freq_'+str(int(fmin)) + 'to'+str(int(fmax))+'' , dpi=500, bbox_inches='tight')
 
 if input('Calculate integrated power? (enter=no)') != '':
-    print('Calculating total power...')
+    timestart = input('Start time (enter for 0): ')
+    timestop = input('Start time (enter for tmax, x to continue): ')
     t_step = 1200/680
     tmax = (len(Pow)-1)*t_step
     time = np.linspace(0,tmax,len(Pow))
-    
-    if input('Change time duration?') != '':
-        tmax = int(input('Tmax [sec] :  '))
-    
-    time2 = time[(time<=tmax)]
-    Pow2 = Pow[(time<=tmax)]
         
-    plt.figure()
-    plt.plot(time2/3600,Pow2)
-    plt.xlabel('time [hs]')
-    plt.ylabel('Ampl [dBm]')
-    plt.savefig(outdir+ 'total_power_freq_'+str(int(fmin)) + 'to'+str(int(fmax)) , dpi=500, bbox_inches='tight')
+    while  timestop != 'x':
+        print('Calculating total power...')
+        
+        if timestart == '':
+            tmin =  0
+        else:
+            tmin = int(timestart)
+
+        if timestop == '':
+            tmax =  time[-1]
+        else:
+            tmax = int(timestop)
+        
+        time2 = time[(time>tmin) & (time<=tmax)]
+        Pow2 = Pow[(time>tmin) & (time<=tmax)]
+            
+        plt.figure()
+        plt.plot(time2/3600,Pow2)
+        plt.xlabel('time [hs]')
+        plt.ylabel('Ampl [dBm]')
+        plt.savefig(outdir+ 'total_power_freq_'+str(int(fmin)) + 'to'+str(int(fmax)) , dpi=500, bbox_inches='tight')
+        print('Done')
+        timestart = input('Start time (enter for 0): ')
+        timestop = input('Start time (enter for tmax, x to continue): ')
+
 
 if input('Calculate Average? (enter=no)') != '':
     print('Calculating Average')
