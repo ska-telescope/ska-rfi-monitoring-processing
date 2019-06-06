@@ -183,7 +183,7 @@ while selection != '0':
         threshold = (1,2,5,10,30,50,80,90,100)
         for j in threshold:
             BW_loss = np.sum(((S_occupancy>j)))/len(S_occupancy)*100
-            print('%d%% of the BW is lost %d%% of the time' % (BW_loss,j))
+            print('%0.3f%% of the BW is lost %d%% of the time' % (BW_loss,j))
         
         
 #    os.system('clear')        
