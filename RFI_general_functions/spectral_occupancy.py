@@ -39,24 +39,24 @@ def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
         
         # remove the influence of RFI present 100% of the time:
         #divide the frequency range in 5 MHz chunks
-        step =5
-        N = int((freqs[-1]-freqs[0])/step)
-        for k in range(N):
-            Frange=[freqs[0]+k*step,freqs[0]+k*step+step]
-        #    Frange=[freqs[i],freqs[i]+step]
-            A_aux = mini[(freqs>=Frange[0]) & (freqs<=Frange[1])]
-            F_aux = freqs[(freqs>=Frange[0]) & (freqs<=Frange[1])]
-            threshold = 0.1
-            points = A_aux[np.where((A_aux-np.min(A_aux))<=threshold)]
-            points[0] = A_aux[0]
-            points[-1] = A_aux[-1]
-            f_points = F_aux[np.where((A_aux-np.min(A_aux))<=threshold)]
-            f_points[0] = F_aux[0]
-            f_points[-1] = F_aux[-1]
-            
-            A_interp = np.interp(freqs[(freqs>=Frange[0]) & (freqs<=Frange[1])],f_points,points)
-            mini[(freqs>=Frange[0]) & (freqs<=Frange[1])] = A_interp
-        
+#        step =5
+#        N = int((freqs[-1]-freqs[0])/step)
+#        for k in range(N):
+#            Frange=[freqs[0]+k*step,freqs[0]+k*step+step]
+#        #    Frange=[freqs[i],freqs[i]+step]
+#            A_aux = mini[(freqs>=Frange[0]) & (freqs<=Frange[1])]
+#            F_aux = freqs[(freqs>=Frange[0]) & (freqs<=Frange[1])]
+#            threshold = 0.1
+#            points = A_aux[np.where((A_aux-np.min(A_aux))<=threshold)]
+#            points[0] = A_aux[0]
+#            points[-1] = A_aux[-1]
+#            f_points = F_aux[np.where((A_aux-np.min(A_aux))<=threshold)]
+#            f_points[0] = F_aux[0]
+#            f_points[-1] = F_aux[-1]
+#            
+#            A_interp = np.interp(freqs[(freqs>=Frange[0]) & (freqs<=Frange[1])],f_points,points)
+#            mini[(freqs>=Frange[0]) & (freqs<=Frange[1])] = A_interp
+#        
         
         
         amps_min = amps - mini
