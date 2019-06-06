@@ -115,7 +115,7 @@ while selection != '0':
 
     if selection == '2': #Histogram
         print('Calculating histogram of the integrated power in %d to %d MHz' %(fmin,fmax))
-        plt.figure()
+        plt.figure(figsize=(30,20),dpi=600)
         plt.hist(Pow,500, linewidth=2)
         plt.xlabel('Ampl [dBm]')
         plt.grid()
@@ -140,7 +140,7 @@ while selection != '0':
 #        time2 = time[(time>tmin) & (time<=tmax)]
 #        Pow2 = Pow[(time>tmin) & (time<=tmax)]
             
-        plt.figure()
+        plt.figure(figsize=(30,20),dpi=600)
         plt.plot(time,Pow, linewidth=2)
         plt.xlabel('time [seconds]')
         plt.ylabel('Ampl [dBm]')
@@ -154,7 +154,7 @@ while selection != '0':
     if selection == '4': #Average
         print('Calculating Average')
         ave = np.average(D,0)            
-        plt.figure()
+        plt.figure(figsize=(30,20),dpi=600)
         plt.plot(freqs,ave, linewidth=2)
         plt.ylabel('Ampl [dBm]')
         plt.xlabel('freq [MHz]')
@@ -179,10 +179,12 @@ while selection != '0':
         print('Calculating occupancy...')
         title = 'Occupancy_'+ time_freq
         S_occupancy =  RFI.spectral_occupancy(freqs,D,outdir,title,3)
-        threshold = int(input('Calculate BW loss greater than (percent of the time):  '))
-        BW_loss = np.sum(((S_occupancy>threshold)))/len(S_occupancy)*100
-        print('Loss of %d %% of the BW the %d %% of the time' % (BW_loss,threshold))
+#        threshold = int(input('Calculate BW loss greater than (percent of the time):  '))
+        threshold = (1,2,5,10,30,50,80,90,100)
+        for j in threshold:
+            BW_loss = np.sum(((S_occupancy>j)))/len(S_occupancy)*100
+            print('%d%% of the BW is lost %d%% of the time' % (BW_loss,j))
         
         
-    os.system('clear')        
+#    os.system('clear')        
     selection = input('\n\nSelect action:\n1: change frequency range\n2: Histogram\n3: Integrated Power\n4: Average\n5: Percentiles\n6: Occupancy\n0: exit\n\nSelect: ')

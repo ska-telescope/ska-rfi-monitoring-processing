@@ -9,9 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
-    N_chunk = int(len(D)/24)
-    input('Continue?')
-    
+        
     occup_thresh = np.zeros(len(D[0]))
     
     amps = np.array(D)
@@ -22,7 +20,7 @@ def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
         A = amps[j]
         N = len(A)
         fit = np.zeros(N)
-        K = 25
+        K = int((freqs[-1]-freqs[0])/12)  #divide the frequency range in peaces of 12 MHz
         for z in range(K):
             freqs2 = freqs[z*int(N/K):(z+1)*int(N/K)]
             A2 = A[z*int(N/K):(z+1)*int(N/K)]
@@ -53,17 +51,11 @@ def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
             
         print('min value baseline ' + str(j) + ' of ' + str(len(amps)))
     
-    
-#    occup_avg = 100.0 / len(D) * occup_avg
-#    occup_median = 100.0 / len(D) * occup_median
     occup_thresh = 100.0 / len(D) * occup_thresh
-    
     print ("Plotting...")
     
     fig, ax = plt.subplots()
-#    ax.plot(freqs, occup_avg, 'r', label='Occupancy over average', linewidth=1)
-#    ax.plot(freqs, occup_median, 'b', label='Occupancy over median', linewidth=1)
-    ax.plot(freqs, occup_thresh, 'g', label='Occupancy over threshold', linewidth=2)
+    ax.plot(freqs, occup_thresh, 'g', label='Occupancy over threshold', linewidth=1)
     ax.set_xlabel("Frequency [MHz]")
     ax.set_ylabel("Occupancy [%]");
     ax.set_autoscaley_on(False)
@@ -72,14 +64,14 @@ def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
     ax.set_xlim([freqs[0], freqs[-1]])
     ax.grid(1)
     
-#    fig.set_size_inches(10, 20)
+    fig.set_size_inches(30, 20)
     
     
     fgnm = 'RFI_occupancy_%d to %d' % (int(freqs[0]),int(freqs[-1]))
     print ("Outputting spectrum occupancy plot %s" % fgnm)
     fout = '%s%s' % (outdir, fgnm)
-    fig.savefig(fout, dpi=500, bbox_inches='tight')
-    plt.close()
+    fig.savefig(fout, dpi=600, bbox_inches='tight')
+#    plt.close()
     
     #plt.figure()
     #plt.plot(freqs,np.transpose(amps_min))

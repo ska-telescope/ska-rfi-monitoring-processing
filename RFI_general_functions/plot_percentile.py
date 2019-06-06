@@ -15,7 +15,7 @@ def plot_percentile(freq,data,percentile,outdir,dataunits='dBm',title=''):
     data_sorted = np.sort(data,0)
     index = int((len(data)-1)*percentile/100)
     data_perc = data_sorted[index] 
-    plt.figure()
+    plt.figure(figsize=(30,20),dpi=600)
     if dataunits == 'dBm':
         plt.plot(freq,(data_perc), linewidth=2)
     else:
