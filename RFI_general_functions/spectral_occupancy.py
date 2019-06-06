@@ -25,7 +25,7 @@ def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
             print ("Last chunk")     
            
         
-        amps = np.array(D1)
+        amps = 10**(np.array(D1)/10) # in linear scale
         
         # calculate the envelope of the data:
         mini = np.min(amps,0)
@@ -70,12 +70,22 @@ def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
         
             occup_thresh += aux_thresh
         
+            # ----- debug ----
             plt.figure() #for debug
             plt.plot(freqs,amps[i])
             plt.plot(freqs,thresh)
             plt.plot(freqs,mini)
             plt.legend(['amps','thresh','mini'])
             plt.savefig(outdir+'debug_occup_'+str(k), dpi=100, bbox_inches='tight')
+
+            plt.figure() #for debug
+            plt.plot(freqs,10*np.log10(amps[i]))
+            plt.plot(freqs,10*np.log10(thresh))
+            plt.plot(freqs,10*np.log10(mini))
+            plt.legend(['amps','thresh','mini'])
+            plt.savefig(outdir+'debug_occup_log_'+str(k), dpi=100, bbox_inches='tight')
+            # ----- debug ----
+            
             print('min value baseline ' + str(k) + ' of ' + str(len(amps)))
     
     
