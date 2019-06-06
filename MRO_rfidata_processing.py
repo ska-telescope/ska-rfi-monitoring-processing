@@ -172,7 +172,9 @@ while selection != '0':
  
     if selection == '6': #Occupancy
         S_occupancy =  RFI.spectral_occupancy(freqs,D,outdir,1.5)
-    
+        threshold = int(input('Calculate BW loss greater than (percent of the time):  '))
+        BW_loss = np.sum(((S_occupancy>threshold)))/len(S_occupancy)*100
+        print('Loss of %d %% of the BW the %d %% of the time' % (BW_loss,threshold))
         
     os.system('clear')        
     selection = input('\n\nSelect action:\n1: change frequency range\n2: Histogram\n3: Integrated Power\n4: Average\n5: Percentiles\n6: Occupancy\n0: exit\n\nSelect: ')
