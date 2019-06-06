@@ -9,6 +9,7 @@ import RFI_general_functions as RFI
 import numpy as np
 import sys
 import os, os.path
+import subprocess
 
 #Commands to run in Ubuntu server:
 
@@ -108,16 +109,17 @@ while selection != '0':
         Pow = 10*np.log10(np.sum(10**(D/10),1))       
         freqs = freq[(freq>=fmin) & (freq<=fmax)]
         time = time1[(time1>=tmin) & (time1<=tmax)]
+        time_freq = str(int((tmax-tmin)/3600))+'hs_'+str(int(fmin)) + 'to'+str(int(fmax))+'MHz'
 
         print('Done')
 
     if selection == '2': #Histogram
         print('Calculating histogram of the integrated power in %d to %d MHz' %(fmin,fmax))
         plt.figure()
-        plt.hist(Pow,500)
+        plt.hist(Pow,500, linewidth=2)
         plt.xlabel('Ampl [dBm]')
         plt.grid()
-        plt.savefig(outdir+ 'power_histogram_'+str(int(fmin)) + 'to'+str(int(fmax))+' MHz' , dpi=600, bbox_inches='tight')
+        plt.savefig(outdir+ 'power_histogram_'+ time_freq , dpi=600, bbox_inches='tight')
 
     if selection == '3': #Total power
         #timestart = input('Start time in sec (enter for 0): ')
@@ -139,10 +141,10 @@ while selection != '0':
 #        Pow2 = Pow[(time>tmin) & (time<=tmax)]
             
         plt.figure()
-        plt.plot(time,Pow)
+        plt.plot(time,Pow, linewidth=2)
         plt.xlabel('time [seconds]')
         plt.ylabel('Ampl [dBm]')
-        title = 'total_power_'+str(tmin)+'sec_to_'+str(int(tmax))+'sec_'+str(int(fmin)) + 'to'+str(int(fmax))+'MHz'
+        title = 'total_power_'+ time_freq
         plt.title(title)
         plt.grid()
         plt.savefig(outdir+title , dpi=600, bbox_inches='tight')
@@ -153,11 +155,14 @@ while selection != '0':
         print('Calculating Average')
         ave = np.average(D,0)            
         plt.figure()
-        plt.plot(freqs,ave)
+        plt.plot(freqs,ave, linewidth=2)
         plt.ylabel('Ampl [dBm]')
         plt.xlabel('freq [MHz]')
         plt.grid()
-        plt.savefig(outdir+ 'Average_all', dpi=600, bbox_inches='tight')
+        title = 'Average_'+ time_freq
+        plt.title(title)
+        
+        plt.savefig(outdir+ title, dpi=600, bbox_inches='tight')
 
 
     if selection == '5': #Percentiles
@@ -165,16 +170,19 @@ while selection != '0':
 
         print('Calculating %s percentile' % (perc))
         
-        title = 'MRO data '+str(int(fmin)) + ' to '+str(int(fmax)) + ' MHz' 
+        title = 'MRO data '+ time_freq
         perc = int(perc)
         RFI.plot_percentile(freqs,D,perc,outdir,'dBm',title)
 
  
     if selection == '6': #Occupancy
-        S_occupancy =  RFI.spectral_occupancy(freqs,D,outdir,1.5)
+        print('Calculating occupancy...')
+        title = 'Occupancy_'+ time_freq
+        S_occupancy =  RFI.spectral_occupancy(freqs,D,outdir,title,1.5)
         threshold = int(input('Calculate BW loss greater than (percent of the time):  '))
         BW_loss = np.sum(((S_occupancy>threshold)))/len(S_occupancy)*100
         print('Loss of %d %% of the BW the %d %% of the time' % (BW_loss,threshold))
+        
         
     os.system('clear')        
     selection = input('\n\nSelect action:\n1: change frequency range\n2: Histogram\n3: Integrated Power\n4: Average\n5: Percentiles\n6: Occupancy\n0: exit\n\nSelect: ')

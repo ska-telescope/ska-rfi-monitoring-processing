@@ -8,7 +8,7 @@ Occupancy in FDV's method:
 import numpy as np
 import matplotlib.pyplot as plt
 
-def spectral_occupancy(freqs,D,outdir,std_multiplier):
+def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
     N_chunk = int(len(D)/24)
     print ("Calculating occupancy...")
     input('Continue?')
@@ -46,7 +46,6 @@ def spectral_occupancy(freqs,D,outdir,std_multiplier):
         #    Frange=[freqs[i],freqs[i]+step]
             A_aux = mini[(freqs>=Frange[0]) & (freqs<=Frange[1])]
             F_aux = freqs[(freqs>=Frange[0]) & (freqs<=Frange[1])]
-        #    A_minmax = np.sort(A_aux)[-1::-1]
             threshold = 0.1
             points = A_aux[np.where((A_aux-np.min(A_aux))<=threshold)]
             points[0] = A_aux[0]
@@ -63,27 +62,20 @@ def spectral_occupancy(freqs,D,outdir,std_multiplier):
         amps_min = amps - mini
         
         
-        for k in range(len(amps)):
-        #for k in range(20): #for debug
-        #    i = 200+k # for debuging
+        #for k in range(len(amps)):
+        for k in range(20): #for debug
+            i = 200+k # for debuging
             thresh = mini - np.average(mini) + np.average(amps[k]) + np.std(amps_min[k])*std_multiplier
-#            avg = np.average(amps_min[i])
-#            median = np.median(amps_min[i])
-#            std = np.std(amps_min[i])
-            
-#            aux_avg = (amps_min[i] > avg+3*std).astype(int)
-#            aux_median = (amps_min[i] > median+3*std).astype(int)
             aux_thresh = (amps[k] > thresh).astype(int)
         
-#            occup_avg += aux_avg
-#            occup_median += aux_median
             occup_thresh += aux_thresh
         
-        #    plt.figure() #for debug
-        #    plt.plot(freqs,amps[i])
-        #    plt.plot(freqs,thresh)
-        #    plt.plot(freqs,mini)
-        
+            plt.figure() #for debug
+            plt.plot(freqs,amps[i])
+            plt.plot(freqs,thresh)
+            plt.plot(freqs,mini)
+            plt.legend('amps','thresh','mini')
+            plt.savefig(outdir+'debug_occup_'+str(k), dpi=100, bbox_inches='tight')
             print('min value baseline ' + str(k) + ' of ' + str(len(amps)))
     
     
