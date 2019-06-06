@@ -10,12 +10,12 @@ import matplotlib.pyplot as plt
 
 def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
     N_chunk = int(len(D)/24)
-    print ("Calculating occupancy...")
     input('Continue?')
     
     occup_thresh = np.zeros(len(D[0]))
     
-    for i in range(24):
+#    for i in range(24):
+    for i in range(2): #Debug
         try:
             D1 = D[i*N_chunk:(i+1)*N_chunk]        
             print ("Chunk : " + str(i) + ' of 24')
@@ -28,10 +28,17 @@ def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
         amps = 10**(np.array(D1)/10) # in linear scale
         
         # calculate the envelope of the data:
+        
         mini = np.min(amps,0)
+        #mini = np.average(amps,0) #DEBUG
+        stdev = np.std(amps,0)
+        interp_step = 50
+        mini = np.interp(freqs,freqs[1::interp_step],mini[1::interp_step])
+        
         # remove the influence of RFI present 100% of the time:
-        #Frange=[360,380]
-        #A_aux = np.array( (mini[freqs==360],mini[freqs==365],mini[freqs==370],mini[freqs==375],mini[freqs==380] ))
+        #Frange = [240,270]
+        #mini[(freqs>=Frange[0]) & (freqs<=Frange[1])] = np.interp(freqs[(freqs>=Frange[0]) & (freqs<=Frange[1])], [freqs[(freqs>=Frange[0])][-1],freqs[(freqs<=Frange[0])][0] ],[mini[(freqs>=Frange[0])][0],mini[(freqs<=Frange[0])][-1] ])
+#        A_aux = np.array( (mini[freqs==360],mini[freqs==365],mini[freqs==370],mini[freqs==375],mini[freqs==380] ))
         #f_aux = np.array([360, 365, 370, 375, 380])
         #A_interp = np.interp(freqs[(freqs>=360) & (freqs<=380)],f_aux,np.reshape(A_aux,5))
         #mini[(freqs>=360) & (freqs<=380)] = A_interp
@@ -59,31 +66,31 @@ def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
 #        
         
         
-        amps_min = amps - mini
+#        amps_min = amps - mini
         
         
-        #for k in range(len(amps)):
-        for k in range(20): #for debug
-            i = 200+k # for debuging
-            thresh = mini - np.average(mini) + np.average(amps[k]) + np.std(amps_min[k])*std_multiplier
+        for k in range(len(amps)):
+#        for k in range(1): #for debug
+#            i = k # for debuging
+            thresh = mini + stdev*std_multiplier
             aux_thresh = (amps[k] > thresh).astype(int)
         
             occup_thresh += aux_thresh
         
             # ----- debug ----
-            plt.figure() #for debug
-            plt.plot(freqs,amps[i])
-            plt.plot(freqs,thresh)
-            plt.plot(freqs,mini)
-            plt.legend(['amps','thresh','mini'])
-            plt.savefig(outdir+'debug_occup_'+str(k), dpi=100, bbox_inches='tight')
-
-            plt.figure() #for debug
-            plt.plot(freqs,10*np.log10(amps[i]))
-            plt.plot(freqs,10*np.log10(thresh))
-            plt.plot(freqs,10*np.log10(mini))
-            plt.legend(['amps','thresh','mini'])
-            plt.savefig(outdir+'debug_occup_log_'+str(k), dpi=100, bbox_inches='tight')
+#            plt.figure() #for debug
+#            plt.plot(freqs,amps[i])
+#            plt.plot(freqs,thresh)
+#            plt.plot(freqs,mini)
+#            plt.legend(['amps','thresh','mini'])
+#            plt.savefig(outdir+'debug_occup_'+str(k), dpi=100, bbox_inches='tight')
+#
+#            plt.figure() #for debug
+#            plt.plot(freqs,10*np.log10(amps[i]))
+#            plt.plot(freqs,10*np.log10(thresh))
+#            plt.plot(freqs,10*np.log10(mini))
+#            plt.legend(['amps','thresh','mini'])
+#            plt.savefig(outdir+'debug_occup_log_'+str(k), dpi=100, bbox_inches='tight')
             # ----- debug ----
             
             print('min value baseline ' + str(k) + ' of ' + str(len(amps)))
