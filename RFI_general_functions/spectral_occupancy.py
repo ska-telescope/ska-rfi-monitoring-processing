@@ -74,7 +74,7 @@ def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
             plt.plot(freqs,amps[i])
             plt.plot(freqs,thresh)
             plt.plot(freqs,mini)
-            plt.legend('amps','thresh','mini')
+            plt.legend(['amps','thresh','mini'])
             plt.savefig(outdir+'debug_occup_'+str(k), dpi=100, bbox_inches='tight')
             print('min value baseline ' + str(k) + ' of ' + str(len(amps)))
     
