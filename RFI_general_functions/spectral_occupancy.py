@@ -13,23 +13,23 @@ def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
     occup_thresh = np.zeros(len(D[0]))
     
     amps = np.array(D)
-    tr = np.ndarray([np.size(amps,0),np.size(amps,1)])
+    err = np.ndarray([np.size(amps,0),np.size(amps,1)])
     n_amps = len(amps)
     for j in range(n_amps):    
         blfit = 2
         A = amps[j]
         N = len(A)
         fit = np.zeros(N)
-        K = int((freqs[-1]-freqs[0])/12)  #divide the frequency range in peaces of 12 MHz
+        K = int((freqs[-1]-freqs[0])/15)  #divide the frequency range in peaces of 12 MHz
         for z in range(K):
             freqs2 = freqs[z*int(N/K):(z+1)*int(N/K)]
             A2 = A[z*int(N/K):(z+1)*int(N/K)]
             coeffs = np.polyfit(freqs2,A2,blfit)
             fit[z*int(N/K):(z+1)*int(N/K)] = np.poly1d(coeffs)(freqs2)
         fit[-1]= fit[-2]
-        err = (A - fit) # normalized spectrum
-        tr = np.average(err)+np.std(err)*std_multiplier #threshold
-        aux_thresh = (err > tr).astype(int)
+        err[j] = (A - fit) # normalized spectrum
+        tr = np.average(err[j])+np.std(err[j])*std_multiplier #threshold
+        aux_thresh = (err[j] > tr).astype(int)
         
         occup_thresh += aux_thresh
         
@@ -82,4 +82,4 @@ def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
     #plt.plot(freqs,amps[i])
     #plt.plot(freqs,thresh)
     #plt.plot(freqs,mini)
-    return occup_thresh
+    return err,occup_thresh

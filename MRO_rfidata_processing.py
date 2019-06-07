@@ -165,7 +165,7 @@ while selection != '0':
         plt.savefig(outdir+ title, dpi=600, bbox_inches='tight')
 
 
-    if selection == '5': #Percentiles
+    if selection == '5': #Percentiles00
         perc = input('Percentile = ')
 
         print('Calculating %s percentile' % (perc))
@@ -178,7 +178,7 @@ while selection != '0':
     if selection == '6': #Occupancy
         print('Calculating occupancy...')
         title = 'Occupancy_'+ time_freq
-        S_occupancy =  RFI.spectral_occupancy(freqs,D,outdir,title,3)
+        Normalized, S_occupancy =  RFI.spectral_occupancy(freqs,D,outdir,title,3)
 #        threshold = int(input('Calculate BW loss greater than (percent of the time):  '))
         threshold = (1,2,5,10,30,50,80,90,100)
         for j in threshold:
