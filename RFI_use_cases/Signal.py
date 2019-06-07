@@ -185,9 +185,6 @@ def FreeSpaceLoss(R_m,fc_Hz):
     return FSPL
 
 
-#%% Performance measurements
-
-def Spectral_purity()
 
 #%% ADS-B
 fs = 5000*MHz
