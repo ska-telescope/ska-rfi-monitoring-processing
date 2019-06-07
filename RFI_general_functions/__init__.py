@@ -28,3 +28,4 @@ from  RFI_general_functions.SKA_EMIEMC_std import SKA_EMIEMC_std
 from  RFI_general_functions.read_MRO_data import read_MRO_data
 from  RFI_general_functions.get_channel import get_channel
 from  RFI_general_functions.spectral_occupancy import spectral_occupancy
+from  RFI_general_functions.read_hdf5_data import read_hdf5_data

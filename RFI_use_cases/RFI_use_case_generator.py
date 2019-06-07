@@ -108,15 +108,24 @@ def Gauss_Noise(t,fs,stdev):
 
 def multiple_emitters(Name,N_emitters,duration,fs):
     # This function generates a repetition of the basic signal N_repeat times,
-    # DME:
-    DME_pulse = 1*ms
-    N_pulses = int(duration/DME_pulse)+1
-    points = int(N_pulses*DME_pulse*fs)
-    S = np.ndarray(points)
+    if Name == 'DME':
+        DME_pulse = 1*ms
+        N_pulses = int(duration/DME_pulse)+1
+        points = int(N_pulses*DME_pulse*fs)
+        S = np.ndarray(points)
+        
+    if Name == 'ADS-B':
+        ADSB_pulse = 1*ms
+        Fo = 1090*MHz
+        N_pulses = int(duration/DME_pulse)+1
+        points = int(N_pulses*DME_pulse*fs)
+        S = np.ndarray(points)
+       
+         
     
     for i in range(N_emitters):
         fc = 1025*MHz + np.random.rand(1)*125*MHz # randomize the center frequency.
-        t1,S1 = Signal('DME',fs,fc,1,N_pulses,rand_phase=1,rand_displace=1)
+        t1,S1 = Signal(Name,fs,fc,1,N_pulses,rand_phase=1,rand_displace=1)
         S += S1
             
     return t1[(t1<=duration)],S[(t1<=duration)]
@@ -141,9 +150,17 @@ def multiple_emitters(Name,N_emitters,duration,fs):
 #%%
 fs = 3000*MHz
 duration= 3*ms
+
+
 [t1,S_DME] = multiple_emitters('DME',20,duration,fs)
 plt.figure()
 plt.plot(t1,S_DME)
+
+
+[t1,S_ADS_B] = multiple_emitters('ADS-B',20,duration,fs)
+plt.figure()
+plt.plot(t1,S_DME)
+
 
 
 N = len(S_DME)
@@ -153,6 +170,11 @@ f_fft = np.fft.fftshift(np.fft.fftfreq(N, d=1/fs))
 plt.figure()
 plt.plot(f_fft,10*np.log10(P_fft*1e3))
 plt.title('FFT of the multiple signal DME')
+
+
+#%% Time occupied by the signal
+
+count = np.sum((abs(S_DME)>0.01))*100/len(S_DME)
 
 
 #%%
