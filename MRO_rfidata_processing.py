@@ -90,10 +90,20 @@ while selection != '0':
         selection = '1'
         init = 0
     if selection == '1': #Change freq range and time
-        fmin = float(input('Minimum freq to analyze (MHz): '))
-        fmax = float(input('Maximum freq to analyze (MHz): '))
+        fmin_select = input('Minimum freq to analyze (MHz) (enter for fmin): ')
+        fmax_select = input('Maximum freq to analyze (MHz) (enter for fmax): ')
         timestart = input('Start time in sec (enter for 0): ')
         timestop = input('End time in sec (enter for tmax): ')
+
+        if fmin_select == '':
+            fmin =  freq[0]
+        else:
+            fmin = float(fmin_select)
+
+        if fmax_select == '':
+            fmax =  freq[-1]
+        else:
+            fmax = float(fmax_select)
                
         if timestart == '':
             tmin =  0
@@ -102,7 +112,7 @@ while selection != '0':
         if timestop == '':
             tmax =  time1[-1]
         else:
-            tmax = int(timestop)        
+            tmax = int(timestop)         
 
         Daux = data[:,(freq>=fmin) & (freq<=fmax)]/6.5-200 # scaling to match the levels calculated by gianni
         D = Daux[(time1>=tmin) & (time1<=tmax),:]

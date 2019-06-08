@@ -7,6 +7,8 @@ Occupancy in FDV's method:
 """
 import numpy as np
 import matplotlib.pyplot as plt
+import warnings
+warnings.simplefilter('ignore', np.RankWarning)
 
 def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
     f_step = freqs[1]-freqs[0]
@@ -15,7 +17,7 @@ def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
     
     #find parts of the spectrum with significant power
     Ave = np.average(10**(D/10),0)
-    channel = 1 #1 MHz channel
+    channel = 0.5 #in MHz channel
     points_in_channel = int(channel/f_step)
     channels_in_BW = int(N/points_in_channel)
     Pow_in_ch = np.zeros(channels_in_BW)
@@ -58,7 +60,7 @@ def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
     err = np.ndarray([np.size(amps,0),np.size(amps,1)])
     n_amps = len(amps)
     for j in range(n_amps):  
-        blfit = 2
+        blfit = 3
         A = amps[j]
         A_aux = np.array(A)
         for i in range(len(f_RFI_start)): #gets rid of the RFI present all the time for doing the fit.
@@ -67,7 +69,7 @@ def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
             
         fit = np.zeros(N)
         #K = int(/15)  #divide the frequency range in peaces of 12 MHz
-        N_12 = int(12/f_step) # aprox number of steps to get 12 MHz
+        N_12 = int(15/f_step) # aprox number of steps to get 12 MHz
         index = int(0)
         while (index+N_12)<N:
             freqs2 = freqs[index:index+N_12]
