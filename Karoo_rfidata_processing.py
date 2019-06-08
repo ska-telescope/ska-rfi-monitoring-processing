@@ -5,6 +5,7 @@ Created on Wed May 22 02:42:48 2019
 @author: F.Divruno
 """
 import matplotlib.pyplot as plt
+import matplotlib
 import RFI_general_functions as RFI
 import numpy as np
 import sys

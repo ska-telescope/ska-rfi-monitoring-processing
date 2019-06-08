@@ -5,6 +5,7 @@ Created on Wed May 22 02:42:48 2019
 @author: F.Divruno
 """
 import matplotlib.pyplot as plt
+import matplotlib
 import RFI_general_functions as RFI
 import numpy as np
 import sys
@@ -36,7 +37,7 @@ if os.name == 'nt':
 
 if ubuntu:
 # in ubuntu
-    matplolib.use('Agg')
+    matplotlib.use('Agg')
     plt.close('all')
     outdir = r'/mnt/data/MRO_rfidata/MRO_rfidata_19_05_12/output/'
     indir = r'/mnt/data/MRO_rfidata/MRO_rfidata_19_05_12'
