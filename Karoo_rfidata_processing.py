@@ -91,10 +91,20 @@ while selection != '0':
         selection = '1'
         init = 0
     if selection == '1': #Change freq range and time
-        fmin = float(input('Minimum freq to analyze (MHz): '))
-        fmax = float(input('Maximum freq to analyze (MHz): '))
+        fmin_select = input('Minimum freq to analyze (MHz) (enter for fmin): ')
+        fmax_select = input('Maximum freq to analyze (MHz) (enter for fmax): ')
         timestart = input('Start time in sec (enter for 0): ')
         timestop = input('End time in sec (enter for tmax): ')
+
+        if fmin_select == '':
+            fmin =  freq[0]
+        else:
+            fmin = float(fmin_select)
+
+        if fmax_select == '':
+            fmax =  freq[-1]
+        else:
+            fmax = float(fmax_select)
                
         if timestart == '':
             tmin =  0
@@ -180,7 +190,7 @@ while selection != '0':
     if selection == '6': #Occupancy
         print('Calculating occupancy...')
         title = 'Occupancy_'+ time_freq
-        Normalized, S_occupancy =  RFI.spectral_occupancy(freqs,D,outdir,title,3)
+        Normalized, S_occupancy =  RFI.spectral_occupancy(freqs,D,outdir,title,2)
 #        threshold = int(input('Calculate BW loss greater than (percent of the time):  '))
         threshold = (1,2,5,10,30,50,80,90,100)
         for j in threshold:

@@ -32,8 +32,8 @@ def read_hdf5_data(indir,outdir,ext='.h5'):
                freq = list(HDF['freqs'])
                data = list(HDF['calibrated_spectrum'])
                
-               dat = np.ndarray([len(data),len(data[0])])
-               for j in range(len(data)):
+               dat = np.ndarray([len(data)-1,len(data[0])])
+               for j in range(len(data)-1):
                    dat[j] = data[j]
         freqs = np.asarray(freq)/1e6 # to MHz
 #        np.savez_compressed(outdir + 'ZA_rfidata_' + str(i), freq=freq, data_file=data_file)
