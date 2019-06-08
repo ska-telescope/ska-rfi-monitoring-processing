@@ -36,6 +36,7 @@ if os.name == 'nt':
 
 if ubuntu:
 # in ubuntu
+    matplolib.use('Agg')
     plt.close('all')
     outdir = r'/mnt/data/MRO_rfidata/MRO_rfidata_19_05_12/output/'
     indir = r'/mnt/data/MRO_rfidata/MRO_rfidata_19_05_12'
