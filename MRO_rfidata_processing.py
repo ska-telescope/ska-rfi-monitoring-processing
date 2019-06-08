@@ -113,7 +113,7 @@ while selection != '0':
             tmax =  time1[-1]
         else:
             tmax = int(timestop)         
-
+        print('Slicing data')
         Daux = data[:,(freq>=fmin) & (freq<=fmax)]/6.5-200 # scaling to match the levels calculated by gianni
         D = Daux[(time1>=tmin) & (time1<=tmax),:]
         Pow = 10*np.log10(np.sum(10**(D/10),1))       
