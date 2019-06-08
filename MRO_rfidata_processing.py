@@ -114,11 +114,18 @@ while selection != '0':
         else:
             tmax = int(timestop)         
         print('Slicing data')
-        Daux = data[:,(freq>=fmin) & (freq<=fmax)]/6.5-200 # scaling to match the levels calculated by gianni
-        D = Daux[(time1>=tmin) & (time1<=tmax),:]
+        i_f_start = int(np.where(freq>=fmin)[0][0])
+        i_f_stop = int(np.where(freq<=fmax)[0][-1])
+        i_t_start = int(np.where(time1>=tmin)[0][0])
+        i_t_stop = int(np.where(time1<=tmax)[0][-1])
+        
+        Daux = data[:,i_f_start:i_f_stop]/6.5-200 # scaling to match the levels calculated by gianni
+        D = Daux[i_t_start:i_t_stop,:]
+        print('data sliced')
+        freqs = freq[i_f_start:i_f_stop]
+        time = time1[i_t_start:i_t_stop]
+        print('freq and time sliced')
         Pow = 10*np.log10(np.sum(10**(D/10),1))       
-        freqs = freq[(freq>=fmin) & (freq<=fmax)]
-        time = time1[(time1>=tmin) & (time1<=tmax)]
         time_freq = str(int((tmax-tmin)/3600))+'hs_'+str(int(fmin)) + 'to'+str(int(fmax))+'MHz'
 
         print('Done')
