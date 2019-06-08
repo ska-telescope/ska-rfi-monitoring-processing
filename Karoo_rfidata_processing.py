@@ -34,8 +34,11 @@ if os.name == 'nt':
     
 #ubuntu = int(input('Select Ubuntu (1) or Windows (0) : '))
 
+location=''
+
 if ubuntu:
 # in ubuntu
+    matplotlib.use('Agg')
     plt.close('all')
     outdir = r'/mnt/data/MRO_rfidata/MRO_rfidata_19_05_12/output/'
     indir = r'/mnt/data/MRO_rfidata/MRO_rfidata_19_05_12'
@@ -114,16 +117,23 @@ while selection != '0':
             tmax =  time1[-1]
         else:
             tmax = int(timestop)        
-
-        Daux = data[:,(freq>=fmin) & (freq<=fmax)] # scaling to match the levels calculated by gianni
-        D = Daux[(time1>=tmin) & (time1<=tmax),:]
+ 
+       print('Slicing data')
+        i_f_start = int(np.where(freq>=fmin)[0][0])
+        i_f_stop = int(np.where(freq<=fmax)[0][-1])
+        i_t_start = int(np.where(time1>=tmin)[0][0])
+        i_t_stop = int(np.where(time1<=tmax)[0][-1])
+        
+        Daux = data[:,i_f_start:i_f_stop] 
+        D = Daux[i_t_start:i_t_stop,:]
+        print('Data sliced')
+        freqs = freq[i_f_start:i_f_stop]
+        time = time1[i_t_start:i_t_stop]
+        print('freq and time sliced')
         Pow = 10*np.log10(np.sum(10**(D/10),1))       
-        freqs = freq[(freq>=fmin) & (freq<=fmax)]
-        time = time1[(time1>=tmin) & (time1<=tmax)]
         time_freq = str(int((tmax-tmin)/3600))+'hs_'+str(int(fmin)) + 'to'+str(int(fmax))+'MHz'
 
         print('Done')
-
     if selection == '2': #Histogram
         print('Calculating histogram of the integrated power in %d to %d MHz' %(fmin,fmax))
         plt.figure(figsize=(30,20))
