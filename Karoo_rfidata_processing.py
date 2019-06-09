@@ -35,14 +35,16 @@ if os.name == 'nt':
     
 #ubuntu = int(input('Select Ubuntu (1) or Windows (0) : '))
 
-location=''
+location='M48'
+location='SKA021'
+location='SKA004'
 
 if ubuntu:
 # in ubuntu
     matplotlib.use('Agg')
     plt.close('all')
-    outdir = r'/mnt/data/MRO_rfidata/MRO_rfidata_19_05_12/output/'
-    indir = r'/mnt/data/MRO_rfidata/MRO_rfidata_19_05_12'
+    outdir = r'/mnt/data/SARAO_2017_meas/'+location+'/results/'
+    indir = r'/mnt/data/SARAO_2017_meas/'+location+'/'
 else:
 # in windows
 #    indir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\02- ZA\\rfidata\\'
@@ -119,7 +121,7 @@ while selection != '0':
         else:
             tmax = int(timestop)        
  
-       print('Slicing data')
+        print('Slicing data')
         i_f_start = int(np.where(freq>=fmin)[0][0])
         i_f_stop = int(np.where(freq<=fmax)[0][-1])
         i_t_start = int(np.where(time1>=tmin)[0][0])

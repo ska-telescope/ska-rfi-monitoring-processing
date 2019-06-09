@@ -19,23 +19,29 @@ def read_hdf5_data(indir,outdir,ext='.h5'):
     files = os.listdir(indir)
     N_files = np.size(files)
    
- 
+    freqs = 0
+
     i = 0
-    for f in files:
+    print('Files:')
+    for i in range(len(files)):
+        print('%d - %s '%(i,files[i]))
+    i = int(input('Select File nr to process: '))
+    f = files[i]
+#    for f in files:
 #    for i in range(2): #for debugging
 #        f = files[i] #for debugging
-        fullpath = os.path.join(indir, f)
-        if os.path.splitext(fullpath)[1] == ext:            
-           with h5py.File(fullpath) as HDF:
-               i+=1
-               print(str(i)+' of '+str(N_files) +' ' + ext + ' files')
-               freq = list(HDF['freqs'])
-               data = list(HDF['calibrated_spectrum'])
-               
-               dat = np.ndarray([len(data)-1,len(data[0])])
-               for j in range(len(data)-1):
-                   dat[j] = data[j]
-        freqs = np.asarray(freq)/1e6 # to MHz
+    fullpath = os.path.join(indir, f)
+    if os.path.splitext(fullpath)[1] == ext:            
+       with h5py.File(fullpath) as HDF:
+           i+=1
+           print(str(i)+' of '+str(N_files) +' ' + ext + ' files')
+           freq = list(HDF['freqs'])
+           data = list(HDF['calibrated_spectrum'])
+           
+           dat = np.ndarray([len(data)-1,len(data[0])])
+           for j in range(len(data)-1):
+               dat[j] = data[j]
+    freqs = np.asarray(freq)/1e6 # to MHz
 #        np.savez_compressed(outdir + 'ZA_rfidata_' + str(i), freq=freq, data_file=data_file)
                        
     return [freqs,dat]
