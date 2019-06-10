@@ -35,9 +35,19 @@ if os.name == 'nt':
     
 #ubuntu = int(input('Select Ubuntu (1) or Windows (0) : '))
 
-location='M48'
-location='SKA021'
-location='SKA004'
+site = input('Select location:\n1: M48 (core)\n2: SKA021\n3: SKA004\n4: SKA008\nSelection: ')
+if site =='1':
+    location='M48'
+if site == '2':
+    location='SKA021'    
+if site == '3':
+    location='SKA004'
+if site == '4':
+    location='SKA008'
+if site == '5':
+    location='SKA132'
+
+
 
 if ubuntu:
 # in ubuntu
@@ -49,8 +59,8 @@ else:
 # in windows
 #    indir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\02- ZA\\rfidata\\'
 #    outdir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\02- ZA\\rfidata\\results\\'
-    indir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\02- ZA\\rfidata\\'
-    outdir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\02- ZA\\rfidata\\results\\'
+    indir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\02- ZA\\rfidata\\'+location+'\\'
+    outdir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\14- RFI environment\\02- ZA\\rfidata\\'+location+'\\results\\'
 
 #%% Read the files from disk
     

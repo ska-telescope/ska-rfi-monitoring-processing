@@ -11,6 +11,7 @@ import scipy.signal as Sig
 import numpy as np
 import matplotlib.pyplot as plt
 import RFI_general_functions as RFI
+from scipy import signal
 
 ms = 1e-3
 us = 1e-6
@@ -53,9 +54,9 @@ def Signal(Name,SamplingFreq,fcentre,Ampl_change=0, N_pulses=1, rand_phase=0, ra
             fc = fcentre
             period = 1*ms # periodicity of the signal
             
-            Trise = 0.25*us
-            Tfall = 0.25*us
-            Tpulse = 0.7*us-Trise-Tfall
+            Trise = 0.1*us
+            Tfall = 0.2*us
+            Tpulse = 0.5*us-Trise-Tfall
             pulse_env = np.concatenate((np.linspace(0,1,int(Trise*SamplingFreq)) \
                                         ,np.ones(int(Tpulse*SamplingFreq)) \
                                         ,np.linspace(1,0,int(Tfall*SamplingFreq)) \
@@ -123,14 +124,41 @@ def multiple_emitters(Name,N_emitters,duration,fs):
         S = np.ndarray(points)
 
     for i in range(N_emitters):
-        t1,S1 = Signal(Name,fs,fc[i],1,N_pulses,rand_phase=1,rand_displace=1)
+        t1,S1 = Signal(Name,fs,fc[i],1,N_pulses,rand_phase=1,rand_displace=0)
         S += S1
             
     return t1[(t1<=duration)],S[(t1<=duration)]
 
 
 
+def Tx_filter(S,fs,f1,f2):
+#    fs = 800e6
+    fn = fs/2
+    f1 = f1/fn
+    f2 = f2/fn
 
+    b, a = signal.butter(3, [f1,f2],btype='bandpass',output='ba')
+    
+#    zi = signal.lfilter_zi(b, a)
+#    z, _ = signal.lfilter(b, a, S, zi=zi*S[0])
+#    #Apply the filter again, to have a result filtered at an order the same as filtfilt:
+#    
+#    z2, _ = signal.lfilter(b, a, z, zi=zi*z[0])
+#    #Use filtfilt to apply the filter:
+    y = signal.filtfilt(b, a, S)
+    
+    plt.figure()
+    plt.plot( S, 'b', alpha=0.75)
+    plt.plot( y, 'k')
+    plt.legend(('noisy signal','filtfilt'), loc='best')
+    
+    [freq,V_orig] = RFI.fft_calc(S,fs, 1, 0)
+    [freq,V_filt] = RFI.fft_calc(y,fs, 1, 0)
+    
+    plt.figure()
+    plt.plot(freq,20*np.log10(V_orig),'r',freq,20*np.log10(V_filt),'b')
+
+    return y
   
     
 #%% DME
@@ -163,20 +191,20 @@ plt.plot(t1,S_ADSB)
 #S = S_DME + S_ADSB
 S = S_ADSB
 
-N = len(S)
-P_fft = np.abs(np.fft.fftshift(np.fft.fft(S)/N))**2/50
-f_fft = np.fft.fftshift(np.fft.fftfreq(N, d=1/fs))
+S_filtered = Tx_filter(S,fs,(1030-20)*MHz,(1030+20)*MHz)
 
+f_fft,P_fft = RFI.fft_calc(S,fs,1,0)
+f_fft,P_fft_filt = RFI.fft_calc(S_filtered,fs,1,0)
+
+
+#%% 
 plt.figure()
-plt.plot(f_fft/1e6,10*np.log10(P_fft/np.max(P_fft)*1e3))
-plt.xlim([1000,1200])
-plt.title('FFT of the multiple signal DME')
-
+plt.plot(f_fft,10*np.log10(P_fft_filt*1e3))
 fo = 1030*MHz
 f_ADSB_mask = np.array([-100,-78,-78,-23,-23,-7 ,-7,-1.3,-1.3,1.3,1.3,7 ,7  ,23 ,23 ,78 ,78 ,100])*MHz+fo
-Amp = max(10*np.log10(P_fft*1e3))
+Amp = np.max(10*np.log10(P_fft*1e3))
 Amp_mask = np.array([   -60 ,-60,-40,-40,-20,-20,-3,-3  ,0   ,0  ,-3 ,-3,-20,-20,-40,-40,-60,-60]) + Amp
-plt.plot(f_ADSB_mask,Amp_mask,'r')
+plt.plot(f_ADSB_mask/1e6,Amp_mask,'r')
 
 
 

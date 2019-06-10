@@ -38,7 +38,10 @@ def fft_calc(signal, fs, power_calc=1 ,plot_figs=0):
         plt.title('power spectrum' )
 
     if plot_figs==1:
-        ave = np.average(abs(data_fft)**2,0)
+        if N_files >1:
+            ave = np.average(abs(data_fft)**2,0)
+        else:
+            ave = np.transpose(abs(data_fft)**2)
         plt.figure()
         plt.plot(freq/1e6,10*np.log10(ave))    
         plt.title('Average of all the captures')
@@ -59,7 +62,7 @@ def partition(signal,max_len, func1, func2= idle_fun):
         m = 1
         n = len(signal)
 
-    if m*n >  max_len: 
+    if (m*n >  max_len) & (m>1): 
         steps = int(m*n/max_len)
         N_step = int(m/steps)
         for i in range(steps):
