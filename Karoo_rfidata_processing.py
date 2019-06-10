@@ -35,7 +35,7 @@ if os.name == 'nt':
     
 #ubuntu = int(input('Select Ubuntu (1) or Windows (0) : '))
 
-site = input('Select location:\n1: M48 (core)\n2: SKA021\n3: SKA004\n4: SKA008\nSelection: ')
+site = input('Select location:\n1: M48 (core)\n2: SKA021\n3: SKA004\n4: SKA008\n5: SKA132\nSelection: ')
 if site =='1':
     location='M48'
 if site == '2':
@@ -107,10 +107,10 @@ while selection != '0':
         selection = '1'
         init = 0
     if selection == '1': #Change freq range and time
-        fmin_select = input('Minimum freq to analyze (MHz) (enter for fmin): ')
-        fmax_select = input('Maximum freq to analyze (MHz) (enter for fmax): ')
+        fmin_select = input('Minimum freq to analyze (MHz) (enter for %f): ' %(freq[0]))
+        fmax_select = input('Maximum freq to analyze (MHz) (enter for %f): ' %(freq[-1]))
         timestart = input('Start time in sec (enter for 0): ')
-        timestop = input('End time in sec (enter for tmax): ')
+        timestop = input('End time in sec (enter for %f): ' %(time1[-1]))
 
         if fmin_select == '':
             fmin =  freq[0]
