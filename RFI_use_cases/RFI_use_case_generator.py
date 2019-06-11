@@ -21,9 +21,71 @@ minute = 60
 hr = 60*minute
 km_h = km/hr
 
-#%%
-def Signal(Name,SamplingFreq,fcentre,Ampl_change=0, N_pulses=1, rand_phase=0, rand_displace=0):
-# this function generates N periods of any signal selected, at the moment only ADS-B and DME.
+
+#%% Cosmic background
+'''
+11/06/2019
+Federico Di Vruno
+This function generates time domain noise for low frequencies (<350 MHz).
+
+Inputs:
+
+Outputs:
+    
+'''    
+
+def Cosmic_background(time_vect,fcentre,integ_time):
+    f = fcentre/1e6
+    #Tsky_ITU = 2.7+200*(408/f)**2.75  # per ITU-R P.372-7 page 19.
+    
+    Tsky = 35+26*(408/f)**2.75  # per Signal chain document for LOW.
+    
+    
+    #1000 hs:
+    B = 5400
+    hs = 1000
+
+    Tsky_ave = Tsky/np.sqrt(B*hs*3600)
+    
+    print('Ave Tsky @%.2f MHz = %.1f'%(f,Tsky))
+    
+    
+    k = 1.38e-23
+    B = 5400
+    P_ave = 10*np.log10(k*Tsky_ave*B*1e3)
+    print('1000 hs ave Tsky_ITU Pow @%.2f MHz = %.1f'%(f,P_ave-10))
+    
+    
+
+#%% Signal
+'''
+11/06/2019
+Federico Di Vruno
+This function generates N periods of any signal selected, at the moment only ADS-B and DME.
+Inputs:
+        Name: signal name, at the moment only DME and ADS-B
+        SamplingFreq: in Hz
+        fcentre: centre frequency in Hz
+        Ampl_change: is set to 1 randomize the amplitude from 0.1 to 1.1 with rectangular probability distribution
+        duration: length of the signal generated in seconds.
+        rand_phase: sets a random phase to the carrier signal with rect. PDF
+        rand_displace: shifts the position of the pulse envelope by a random quantity within [0:period/2]
+
+output:
+        t_aux: time vector 
+        S: voltage signal scaled to 1 (1.1 in the case of random amplitude)
+        
+'''
+def Signal(Name, SamplingFreq, fcentre, duration, Ampl_change=0, rand_phase=0, rand_displace=0):
+
+    
+    if Name == 'DME':
+        period = 1*ms 
+        N_pulses = int(duration/period)+1
+    if Name == 'ADS-B':
+        period = 1*ms 
+        N_pulses = int(duration/period)+1
+
     
     t_aux = []
     env_aux = []
@@ -87,13 +149,14 @@ def Signal(Name,SamplingFreq,fcentre,Ampl_change=0, N_pulses=1, rand_phase=0, ra
     # displacement of the signal
     if rand_displace:
         N = int(fs/period)
-        displace = int(np.random.rand(1)*N)
+        displace = int(np.random.rand(1)*N/2)
         S = np.roll(S,displace)
           
     if Ampl_change:
         A = np.random.rand(1)+0.1
         S = S*A
-    return [t_aux,S]
+        
+    return [t_aux[(t_aux<=duration)],S[(t_aux<=duration)]]
 
 
 
@@ -105,30 +168,39 @@ def Gauss_Noise(t,fs,stdev):
     Noise = stdev*np.random.randn(N)
     return Noise
 
-    
+
+'''
+
+11/06/2019
+Federico Di Vruno
+This function generates N periods of any signal selected, at the moment only ADS-B and DME.
+
+name: multiple_emitters
+
+Inputs:
+    Name: 
+    N_emitters: 
+    duration: time duration in sec
+    fs: Sampling freq [Hz]
+
+Output:
+    t1: time vector
+    S = signal
+    '''
 
 def multiple_emitters(Name,N_emitters,duration,fs):
     # This function generates a repetition of the basic signal N_repeat times,
     if Name == 'DME':
-        DME_pulse = 1*ms
         fc = 1025*MHz + np.random.rand(N_emitters)*125*MHz # randomize the center frequency.
-        N_pulses = int(duration/DME_pulse)+1
-        points = int(N_pulses*DME_pulse*fs)
-        S = np.ndarray(points)
         
     if Name == 'ADS-B':
-        ADSB_pulse = 1*ms
         fc = np.ones(N_emitters)*1030*MHz
-        N_pulses = int(duration/ADSB_pulse)+1
-        points = int(N_pulses*ADSB_pulse*fs)
-        S = np.ndarray(points)
-
+        
     for i in range(N_emitters):
-        t1,S1 = Signal(Name,fs,fc[i],1,N_pulses,rand_phase=1,rand_displace=0)
+        t1,S1 = Signal(Name,fs,fc[i],duration,Ampl_change=1,rand_phase=1,rand_displace=0)
+        if i==0: S = S1
         S += S1
-            
     return t1[(t1<=duration)],S[(t1<=duration)]
-
 
 
 def Tx_filter(S,fs,f1,f2):
@@ -175,7 +247,7 @@ def Tx_filter(S,fs,f1,f2):
 
 #%%
 fs = 3000*MHz
-duration= 1*ms
+duration= 5*ms
 
 
 #[t1,S_DME] = multiple_emitters('DME',20,duration,fs)
@@ -183,7 +255,7 @@ duration= 1*ms
 #plt.plot(t1,S_DME)
 
 
-[t1,S_ADSB] = multiple_emitters('ADS-B',1,duration,fs)
+[t1,S_ADSB] = multiple_emitters('ADS-B',5,duration,fs)
 plt.figure()
 plt.plot(t1,S_ADSB)
 
@@ -211,7 +283,7 @@ plt.plot(f_ADSB_mask/1e6,Amp_mask,'r')
 
 #%% Time occupied by the signal
 
-count = np.sum((abs(S_DME)>0.01))*100/len(S_DME)
+count = np.sum((abs(S)>0.01))*100/len(S)
 
 
 #%%
