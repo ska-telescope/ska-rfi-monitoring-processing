@@ -1,273 +1,193 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri May 24 14:18:19 2019
+Created on Thu Jun 20 23:47:19 2019
 
-@author: F.Divruno
+@author: f.divruno
 """
 import scipy.signal as Sig
 import numpy as np
 import matplotlib.pyplot as plt
 import RFI_general_functions as RFI
-
+import astropy.coordinates as Coord
+import astropy.units as u
+from poliastro.twobody import Orbit
+from poliastro.bodies import Earth
+import siggen as siggen
+import scipy.constants as const
+from scipy import signal
 
 ms = 1e-3
 us = 1e-6
 MHz = 1e6
+GHz = 1e9
 km = 1e3
 minute = 60
 hr = 60*minute
 km_h = km/hr
+k_bolt = 1.38e-23
+'''----------------------------------
 
+    ----------------------------------
+'''
+class Signal():
 
-def Signal(Name,SamplingFreq,rand_phase=0, rand_displace=0):
+    # generate a signal object.
+    def __init__(self,Name,Duration,SamplingRate,CenterFreq,Power,Pol,random_seed=[]):
+        self.Name = Name
+        self.Duration = Duration
+        self.SamplingRate = SamplingRate
+        self.CenterFreq = CenterFreq
+        self.Seed = random_seed #Used in the case of wanting to repeat the "random" signal (not implemented yet)
+        self.Power = Power
+        self.Polarization = Pol
+        
+        self.time,self.data = self.Message()
+        
+        self.data = self.Scale_power()
+
     
-    if Name == 'DME':
-        period = 1*ms # periodicity of the signal
-        offset = 100*us
-        fc = 1000*MHz
-        Bw = 1*MHz
-        t = np.linspace(-period/2,period/2,period*SamplingFreq)
-
-        [k,env1] = Sig.gausspulse(t,fc,Bw/fc,retenv=1) #envolvent of the gauss pulse
-        env2 = np.roll(env1,int(offset*SamplingFreq)) #envolvent shifted in time to generate the second pulse.
-        t = np.linspace(0,period,period*SamplingFreq)
-        env = env1 + env2
-
-    if Name == 'ADS-B':
-        # 
-        Ton = 120*us
-        fc = 1090*MHz #1090*MHz
-        period = 1*ms # periodicity of the signal
+ # --------------------------------------        
+    def Symbol(self, ini_phase, displace = 0):
         
-        Trise = 0.1*us
-        Tfall = 0.1*us
-        Tpulse = 0.5*us-Trise-Tfall
-        pulse_env = np.concatenate((np.linspace(0,1,int(Trise*SamplingFreq)) \
-                                    ,np.ones(int(Tpulse*SamplingFreq)) \
-                                    ,np.linspace(1,0,int(Tfall*SamplingFreq)) \
-                                    ,np.zeros(int((1*us-Trise-Tfall-Tpulse)*SamplingFreq))))
-        env = []
-        for i in range(120):
-            pulse_shift = (np.round(np.random.random(1))).astype(int)
-            env = np.concatenate((env,np.roll(pulse_env,int(pulse_shift*0.5*us*SamplingFreq))))
-        
-        env = np.concatenate((env,np.zeros(int((period-Ton)*SamplingFreq))))
-        t = np.linspace(0,period,period*SamplingFreq)
-        
-
-    if rand_phase:
-        phase = np.random.rand(1)*2*np.pi
-    else:
-        phase = 0
-    sine = np.sin(2*np.pi*fc*t+phase)
-    S = sine*env
+        if self.Name == 'DME':
+            period = 1*ms # periodicity of the signal
+            offset = 12*us
+            SamplingFreq = self.SamplingRate
+            fc = self.CenterFreq
+            Bw = 0.5*MHz #0.5% of center frequency
+            t = np.linspace(-period/2,period/2,period*SamplingFreq)
     
-    # displacement of the pulses inside the time vector.
-    if rand_displace:
-        N = len(S)
-        displace = int(np.random.rand(1)*N/2)
-        S = np.roll(S,displace)
+            [k,env1] = Sig.gausspulse(t,fc,(Bw/fc),retenv=1) #envelope of the gauss pulse
+            env2 = np.roll(env1,int(offset*SamplingFreq)) #envelope shifted in time to generate the second pulse.
+            t = np.linspace(0,period,period*SamplingFreq)
+            env = env1 + env2        
+        
+            sine = np.sin(2*np.pi*fc*t+ini_phase)
+            S = sine*env
             
-                
-    return [t,S]
+            # displacement of the pulses inside the time vector.
+            if displace>0:
+                #np.random.seed(self.Seed) #loads the seed in case of wanting to repeat the signal
+                S = np.roll(S,displace)
+            return [t,S]
+        
 
-def Gauss_Noise(t,fs,sig,mu):
-    # Define a white gausian noise to add to the RFI signal.
-    # noise is defined in voltage.
-    # Bandwidth of the noise is -fs/2 to fs/2
-    N = len(t)
-    Noise = sig*np.random.randn(N) + mu
-    return Noise
+        if self.Name == 'ADS-B':
+             
+            Ton = 120*us
+            fc = self.CenterFreq #1090*MHz
+            period = 1*ms # periodicity of the signal
+            SamplingFreq = self.SamplingRate
+            Trise = 0.1*us
+            Tfall = 0.1*us
+            Tpulse = 0.5*us-Trise-Tfall
+            pulse_env = np.concatenate((np.linspace(0,1,int(Trise*SamplingFreq)) \
+                                        ,np.ones(int(Tpulse*SamplingFreq)) \
+                                        ,np.linspace(1,0,int(Tfall*SamplingFreq)) \
+                                        ,np.zeros(int((1*us-Trise-Tfall-Tpulse)*SamplingFreq))))
+            N = len(pulse_env)
+            env = np.zeros(int(period*SamplingFreq))
+            for i in range(120):
+                try:
+                    np.random.seed(self.Seed*i)
+                except:
+                    np.random.seed()
+                pulse_shift = (np.round(np.random.random(1))).astype(int)
+                env[i*N:(i+1)*N] = np.roll(pulse_env,int(pulse_shift*period/2*SamplingFreq))
+            
+            t = np.linspace(0,period,period*SamplingFreq)
+            
+            sine = np.sin(2*np.pi*fc*t+ini_phase)
+            S = sine*env
+        
+            # displacement of the pulses inside the time vector.
+            if displace>0:
+                S = np.roll(S,displace)
 
+            return [t,S]    
+# --------------------------------------        
+    def Message(self):
+        L = self.Duration
+        fs = self.SamplingRate
+        
+        
+        if self.Name == 'DME':
+            SymLen = 1e-3 #lenght of the symbol
+            samples_sym = int((SymLen*fs)) #number of samples in a symbol
+            N_Symbols = int((L/SymLen)) #number of symbles + 1 because of the rounding.
+            samples_tot = int((N_Symbols*samples_sym)) # total number of samples
+            #np.random.seed(self.Seed) #loads the seed in case of wanting to repeat the same signal.
+            ini_phase = np.random.rand(1)*2*np.pi #random phase for the signal generator
+            S = np.zeros(samples_tot)
+            t = np.zeros(samples_tot)
+
+            N = samples_sym
+            displace = int(np.random.rand(1)*(N*0.25))
+            for i in range(N_Symbols):
+                t_aux,S[i*samples_sym:(i+1)*samples_sym] = self.Symbol(ini_phase, displace)        
+                if i>0:
+                    t_aux += t_aux[1]
+
+                t[i*samples_sym:(i+1)*samples_sym] = t_aux+t_aux[-1]*i
+            return t[t<=self.Duration] , S[t<=self.Duration]
+            
+        if self.Name == 'ADS-B':
+            SymLen = 1*ms #time duration of a symbol >120us
+            samples_sym = int(SymLen*fs) #number of samples in a symbol
+            N_Symbols = int(L/SymLen)+1 #number of symbles + 1 because of the rounding.
+            samples_tot = int(round(N_Symbols*SymLen*fs)) # total number of samples
+            #np.random.seed(self.Seed) #loads the seed in case of wanting to repeat the same signal.
+            ini_phase = np.random.rand(1)*2*np.pi #random phase for the signal generator
+            N = samples_sym
+            displace = int(np.random.rand(1)*(N*0.25))
+            S = np.zeros(samples_tot)
+            t = np.zeros(samples_tot)
+            for i in range(N_Symbols):
+                t_aux,S[i*samples_sym:(i+1)*samples_sym] = self.Symbol(ini_phase, displace)        
+                if i>0:
+                    t_aux += t_aux[1]
+
+                t[i*samples_sym:(i+1)*samples_sym] = t_aux+t_aux[-1]*i
+            S = self.Tx_filter(S,self.CenterFreq*0.99,self.CenterFreq*1.01)
+            return t[t<=self.Duration] , S[t<=self.Duration]
+
+    '''----------------------------------
     
-
-def gen_signal_train(Name,fs,N_repeat):
-    # This function generates a repetition of the basic signal N_repeat times,
+        ----------------------------------
+    '''
     
-    tout = []
-    Sout = []
-
-    for i in range(N_repeat):
-        taux,Saux = Signal(Name,fs,rand_displace=1)        
-        Sout = np.append(Sout,Saux)
-        try:
-            tout = np.append(tout,taux+tout[-1])
-        except:
-            tout = taux
-    return tout,Sout
+    def Scale_power(self):
+        Pow = self.Power # power in dBm
+        scale = np.sqrt(10**(Pow/10)*1e-3*50*2)
+        return self.data*scale
 
 
-
-
-
-def Emitter_attitude(Name,time):
-    if Name == 'Airplane':
-        h = 10*km
-        phi_o = (np.random.rand(1)-0.5)*np.pi*2 #random direction of first apearence
-        Ro = 800*km # first distance
-        if phi_o<np.pi/4 and phi_o>-np.pi/4: #coming from east
-            direction = (np.random.rand(1)-0.5)*np.pi+np.pi #random direction    
-        if phi_o<np.pi*3/4 and phi_o>np.pi/4: #coming from north
-            direction = (np.random.rand(1)-0.5)*np.pi+np.pi*3/2 #random direction    
-        if phi_o>np.pi*3/4 or phi_o<-np.pi*3/4: #coming from west
-            direction = (np.random.rand(1)-0.5)*np.pi #random direction    
-        if phi_o<-np.pi/4 and phi_o>-np.pi*3/4: # coming from south
-            direction = (np.random.rand(1)-0.5)*np.pi+np.pi/2 #random direction    
-
-        Xo = Ro*np.sin(phi_o)
-        Yo = Ro*np.cos(phi_o)
-        speed = 800*km_h
-        X = Xo+np.sin(direction)*speed*time
-        Y = Yo+np.cos(direction)*speed*time
-        Z = h
-    return X,Y,Z
-
-
-def RFI_TX(Signals,powers,X,Y,Z):
+    def Tx_filter(self,S,f1,f2,plot=0):
+        fs = self.SamplingRate
+        fn = fs/2
+        f1 = f1/fn
+        f2 = f2/fn
     
-#    Signals = matrix with the generated signal trains
-#    powers = list with the Tx power for each signal type.
-#    X,Y,Z = attitude of the emitter
-     a=1
+        b, a = signal.butter(3, [f1,f2],btype='bandpass',output='ba')
+        
+    #    zi = signal.lfilter_zi(b, a)
+    #    z, _ = signal.lfilter(b, a, S, zi=zi*S[0])
+    #    #Apply the filter again, to have a result filtered at an order the same as filtfilt:
+    #    
+    #    z2, _ = signal.lfilter(b, a, z, zi=zi*z[0])
+    #    #Use filtfilt to apply the filter:
+        y = signal.filtfilt(b, a, S)
+        
+        if plot:
+            plt.figure()
+            plt.plot( S, 'b', alpha=0.75)
+            plt.plot( y, 'k')
+            plt.legend(('noisy signal','filtfilt'), loc='best')
+            
+            [freq,V_orig] = RFI.fft_calc(S,fs, 1, 0)
+            [freq,V_filt] = RFI.fft_calc(y,fs, 1, 0)
+            
+            plt.figure()
+            plt.plot(freq,20*np.log10(V_orig),'r',freq,20*np.log10(V_filt),'b')
     
-    
-def RX_gain(X,Y,Z):
-    #2 dimension sinc
-    Go = 1e5
-    R_half = 1.8954 # half power point of the sinc function
-    beamwidth = 1*np.pi/180
-    k = R_half*2/Go/np.tan(beamwidth/2)
-    gain = np.sinc(np.sqrt(X**2+Y**2)/np.pi*k)*Go
-    
-    # returns the gain value in linea units
-    return gain
-
-def plot_rx_pattern():
-    from matplotlib import cm
-    from matplotlib.ticker import LinearLocator, FormatStrFormatter
-    from mpl_toolkits.mplot3d import Axes3D
-    #2 dimension sinc
-    lmax= 10000
-    Go = 1e5
-    R_half = 1.8954 # half power point of the sinc function
-    beamwidth = 1*np.pi/180
-    k = R_half*2/Go/np.tan(beamwidth/2)
-    
-    x = np.linspace(-lmax,lmax,100)
-    y = np.linspace(-lmax,lmax,100)
-    [X,Y] = np.meshgrid(x,y)
-    Z = np.sinc(np.sqrt(X**2+Y**2)/np.pi*k)
-    fig = plt.figure()
-    ax = fig.gca(projection='3d')
-    # Plot the surface.
-    surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
-                           linewidth=0, antialiased=False)
-    
-    # Add a color bar which maps values to colors.
-    fig.colorbar(surf, shrink=0.5, aspect=5)
-    
-    plt.show()
-
-    
-    
-def Range(X,Y,h):
-    R = np.sqrt(X**2+Y**2+h**2)
-    return R
-
-def Phase(R,fc):
-    lda = 3e8/fc
-    phase = 2*np.pi/lda*R
-    return phase
-
-def FreeSpaceLoss(R_m,fc_Hz):
-    #receives Range in m and centre frequency in Hz    
-    FSPL = 20*np.log10(R_m) + 20*np.log10(fc_Hz/MHz) - 27.55 
-    return FSPL
-
-
-
-#%% ADS-B
-fs = 5000*MHz
-[t1,S1] = Signal('ADS-B',fs)
-
-plt.figure()
-plt.plot(t1,S1)
-
-
-[t1,S1] = gen_signal_train('ADS-B',fs,3)
-plt.figure()
-plt.plot(t1,S1)
-
-N = len(S1)
-P_fft = np.abs(np.fft.fftshift(np.fft.fft(S1)/len(S1)))**2/50
-f_fft = np.fft.fftshift(np.fft.fftfreq(N, d=1/fs))
-
-plt.figure()
-plt.plot(f_fft,10*np.log10(P_fft*1e3))
-
-# With noise
-# Summing the noise to the signal train
-
-sig = 1/100
-mu = 0
-Noise = Gauss_Noise(t1,fs,sig,mu)
-S_ADSB = S1 
-plt.figure()
-plt.plot(t1,S_ADSB)
-
-    
-    
-#%% DME
-
-[t1,S1] = Signal('DME',5000*MHz)
-[t1,S2 ]= Signal('DME',5000*MHz)
-[t1,S3 ]= Signal('DME',5000*MHz)
-
-plt.figure()
-plt.plot(t1,S1)
-plt.plot(t1,S2)
-plt.plot(t1,S3)
-
-
-[t1,S_DME] = gen_signal_train('DME',5000*MHz,5)
-plt.figure()
-plt.plot(t1,S_DME)
-
-
-#%% ADS-B + DME
-# With noise
-# Summing the noise to the signal train
-
-L1 = len(S_ADSB)
-L2 = len(S_DME)
-L = min(L1,L2)
-S_multiple = S_ADSB[0:L] + S_DME[0:L] + Noise[0:L]
-t = t1[0:L]
-
-plt.figure()
-plt.plot(t*1e6,S_multiple)
-plt.xlabel('microsec')
-
-N = len(S_multiple)
-P_fft = np.abs(np.fft.fftshift(np.fft.fft(S_multiple)/N))**2/50
-f_fft = np.fft.fftshift(np.fft.fftfreq(N, d=1/fs))
-
-plt.figure()
-plt.plot(f_fft,10*np.log10(P_fft*1e3))
-plt.title('FFT of the multiple signal ADS-B + DME')
-
-#%% vuelos simulados avion.
-
-t = np.linspace(0,3*hr,1000)
-plt.figure()
-k = np.linspace(0,1,1000)
-X = 800*km*np.sin(2*np.pi*k)
-Y = 800*km*np.cos(2*np.pi*k)
-plt.plot(X,Y,'b')
-for i in range(50):
-    X,Y,Z = Emitter_attitude('Airplane',t)
-    plt.plot(X,Y)
-    plt.plot(X[0],Y[0],'ro')
-    
-
-
+        return y

@@ -280,7 +280,7 @@ else:
     SKALA4_time = Aux['time'] # in seconds
     SKALA4_freq = Aux['freq'] # in MHz
 
-load_td_data = 0
+load_td_data = 1
 if load_td_data:
     Aux = np.load(r'C:\Users\F.Divruno\Dropbox (SKA)\14- RFI environment\01- Australia\Phase-0\2019-03-31\DATA\RX-02_SKALA-4.0\Pol-X\Phase0_full_day_raw.npz')
     td_data = Aux['td_data'] # time domain raw data

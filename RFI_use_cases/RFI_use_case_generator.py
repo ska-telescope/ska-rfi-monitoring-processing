@@ -8,6 +8,7 @@ Signal generator for RFI use cases for SKA.
 @author: f.divruno
 """
 import scipy.signal as Sig
+import scipy.constants as const
 import numpy as np
 import matplotlib.pyplot as plt
 import RFI_general_functions as RFI
@@ -30,7 +31,11 @@ This function generates time domain noise for low frequencies (<350 MHz).
 
 Inputs:
 
+    
+    
 Outputs:
+    
+    
     
 '''    
 
@@ -55,7 +60,43 @@ def Cosmic_background(time_vect,fcentre,integ_time):
     P_ave = 10*np.log10(k*Tsky_ave*B*1e3)
     print('1000 hs ave Tsky_ITU Pow @%.2f MHz = %.1f'%(f,P_ave-10))
     
+#%% Star signal:
+# Original White noise signal to be summed to every antenna
     
+def star(SamplingRate, duration):
+    
+    # Star is generated with an extra time to be able to delay the signal
+    # at a maximum angle of 30 deg for a baseline of 80km
+    max_baseline = 80*km
+    max_angle = 30*np.pi/180
+    max_delay = max_baseline/const.c*np.sin(max_angle)
+    t_max = duration+2*max_delay
+    
+    #number of samples
+    N = int(t_max*SamplingRate)
+    
+    #generate the random signal
+    star = np.random.randn(N)
+    
+    return star
+    
+
+# Delay of the star signal depending on the baseline and the angle of the source    
+def rx_star(star,SamplingRate,duration,angle,baseline):
+    c = const.c
+    L = baseline
+    angle = angle*np.pi/180
+    dt = L*np.sin(angle)/c
+    
+    N_delay = int(dt*SamplingRate)
+    N = int(duration*SamplingRate)
+    
+    star_delayed = star[N_delay:(N_delay+N)]
+    
+    return star_delayed
+
+
+ 
 
 #%% Signal
 '''
@@ -76,12 +117,14 @@ output:
         S: voltage signal scaled to 1 (1.1 in the case of random amplitude)
         
 '''
+
 def Signal(Name, SamplingFreq, fcentre, duration, Ampl_change=0, rand_phase=0, rand_displace=0):
 
     
     if Name == 'DME':
         period = 1*ms 
         N_pulses = int(duration/period)+1
+        
     if Name == 'ADS-B':
         period = 1*ms 
         N_pulses = int(duration/period)+1
@@ -155,6 +198,10 @@ def Signal(Name, SamplingFreq, fcentre, duration, Ampl_change=0, rand_phase=0, r
     if Ampl_change:
         A = np.random.rand(1)+0.1
         S = S*A
+    
+    filt_signal = 0        
+    if filt_signal:
+        S = Tx_filter(S,fs,(fc-(fc/50))*MHz,(fc+(fc/50))*MHz)
         
     return [t_aux[(t_aux<=duration)],S[(t_aux<=duration)]]
 
@@ -246,44 +293,62 @@ def Tx_filter(S,fs,f1,f2):
 #
 
 #%%
-fs = 3000*MHz
-duration= 5*ms
+if __name__ == '__main__':
+        
+    fs = 3000*MHz
+    duration= 1*ms
+    
+    
+    [t1,S_DME] = multiple_emitters('DME',1,duration,fs)
+    plt.figure()
+    plt.plot(t1,S_DME)
+    
+    
+    [t1,S_ADSB] = multiple_emitters('ADS-B',1,duration,fs)
+    plt.figure()
+    plt.plot(t1,S_ADSB)
+    
+    
+    S = S_DME + S_ADSB
+    plt.figure()
+    plt.plot(t1,S)
 
-
-#[t1,S_DME] = multiple_emitters('DME',20,duration,fs)
-#plt.figure()
-#plt.plot(t1,S_DME)
-
-
-[t1,S_ADSB] = multiple_emitters('ADS-B',5,duration,fs)
-plt.figure()
-plt.plot(t1,S_ADSB)
-
-
-#S = S_DME + S_ADSB
-S = S_ADSB
-
-S_filtered = Tx_filter(S,fs,(1030-20)*MHz,(1030+20)*MHz)
-
-f_fft,P_fft = RFI.fft_calc(S,fs,1,0)
-f_fft,P_fft_filt = RFI.fft_calc(S_filtered,fs,1,0)
-
-
-#%% 
-plt.figure()
-plt.plot(f_fft,10*np.log10(P_fft_filt*1e3))
-fo = 1030*MHz
-f_ADSB_mask = np.array([-100,-78,-78,-23,-23,-7 ,-7,-1.3,-1.3,1.3,1.3,7 ,7  ,23 ,23 ,78 ,78 ,100])*MHz+fo
-Amp = np.max(10*np.log10(P_fft*1e3))
-Amp_mask = np.array([   -60 ,-60,-40,-40,-20,-20,-3,-3  ,0   ,0  ,-3 ,-3,-20,-20,-40,-40,-60,-60]) + Amp
-plt.plot(f_ADSB_mask/1e6,Amp_mask,'r')
-
-
+    #S = S_ADSB*1
+    
+    #Star signal
+    star_sig = star(fs,duration)
+    star_rx1 = rx_star(star_sig,fs,duration,0,80e3)
+    star_rx2 = rx_star(star_sig,fs,duration,10,80e3)
+    
+    # Receivers 
+    RX1 = star_rx1 + S
+    RX2 = star_rx2 + S
+    
+    plot_corr = 1
+    if plot_corr:
+        Corr = np.correlate(RX1,RX2,'full')
+        plt.figure()
+        plt.plot(Corr)
+        
+    
+    plot_spect = 0
+    
+    if plot_spect:
+        f_fft,P_fft = RFI.fft_calc(S,fs,1,0)
+        plt.figure()
+        plt.plot(f_fft,10*np.log10(P_fft*1e3))
+        fo = 1030*MHz
+        f_ADSB_mask = np.array([-100,-78,-78,-23,-23,-7 ,-7,-1.3,-1.3,1.3,1.3,7 ,7  ,23 ,23 ,78 ,78 ,100])*MHz+fo
+        Amp = np.max(10*np.log10(P_fft*1e3))
+        Amp_mask = np.array([   -60 ,-60,-40,-40,-20,-20,-3,-3  ,0   ,0  ,-3 ,-3,-20,-20,-40,-40,-60,-60]) + Amp
+        plt.plot(f_ADSB_mask/1e6,Amp_mask,'r')
+        
+    
 
 
 #%% Time occupied by the signal
 
-count = np.sum((abs(S)>0.01))*100/len(S)
+#count = np.sum((abs(S)>0.01))*100/len(S)
 
 
 #%%

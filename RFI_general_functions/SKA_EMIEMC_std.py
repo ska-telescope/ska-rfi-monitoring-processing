@@ -52,11 +52,11 @@ def SKA_EMIEMC_std(fstart,fstop,N,plot):
         plt.xlabel("frequency [MHz]")
         plt.ylabel("[dBm]")
         plt.xscale('log')
-        plt.plot(freq,SKA_Line_PSD, label = 'Spectral Line Rx power')
+        plt.plot(freq,SKA_Line_dBm, label = 'Spectral Line Rx power')
         plt.grid(True,'both')
         plt.title('SKA PSD Limits [dBm]')
         plt.legend()
 
         
-    return [freq,SKA_Continuum_PSD, RBW_Continuum, SKA_Continuum_dBm, SKA_Line_PSD,RBW_Line, SKA_Line_dBm]
-
+#   return [freq,SKA_Continuum_PSD, RBW_Continuum, SKA_Continuum_dBm, SKA_Line_PSD,RBW_Line, SKA_Line_dBm]
+    return {'freq' : freq*1e6,'SKA_Continuum_PSD':SKA_Continuum_PSD,'RBW_Continuum': RBW_Continuum, 'SKA_Continuum_dBm':SKA_Continuum_dBm, 'SKA_Line_PSD':SKA_Line_PSD,'RBW_Line':RBW_Line, 'SKA_Line_dBm':SKA_Line_dBm}
