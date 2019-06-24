@@ -8,12 +8,6 @@ import scipy.signal as Sig
 import numpy as np
 import matplotlib.pyplot as plt
 import RFI_general_functions as RFI
-import astropy.coordinates as Coord
-import astropy.units as u
-from poliastro.twobody import Orbit
-from poliastro.bodies import Earth
-import siggen as siggen
-import scipy.constants as const
 from scipy import signal
 
 ms = 1e-3

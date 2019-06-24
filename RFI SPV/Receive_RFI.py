@@ -4,16 +4,7 @@ Created on Thu Jun 20 23:51:32 2019
 
 @author: f.divruno
 """
-import scipy.signal as Sig
 import numpy as np
-import matplotlib.pyplot as plt
-import RFI_general_functions as RFI
-import astropy.coordinates as Coord
-import astropy.units as u
-from poliastro.twobody import Orbit
-from poliastro.bodies import Earth
-import siggen as siggen
-import scipy.constants as const
 
 from Path import Path
 
@@ -36,6 +27,7 @@ def Receive_RFI(Telescope_list, Emitter_list,Duration,SamplingRate,plot_flag=0):
         print('\n\nTelescope: ' + Telescope_list[i].Name)
         Telescope_list[i].Rx_signal = np.zeros(total_samples)
         Telescope_list[i].time = np.linspace(0,Duration,total_samples)
+        
         for j in range(len(Emitter_list)):
             print('\nEmitter: ' + Emitter_list[j].Name)
             #for each emitter calculates the Range and the angle.
@@ -54,8 +46,9 @@ def Receive_RFI(Telescope_list, Emitter_list,Duration,SamplingRate,plot_flag=0):
                     max_delay_samples = delay_samples
                     if max_delay_samples/SamplingRate > Duration:
                         print('Delay is %0.2f us, greater han UC duration' % (max_delay_samples/SamplingRate/us))
-                
-                FSPL_times = 10**(-FSPL/10)
+                        exit(3)
+                        
+                FSPL_times = 10**(-FSPL/20)
                 
                 #Attenuate: Antenna gain is not included at the moment
                 Sig_aux = FSPL_times*Emitter_list[j].Signals[k].data

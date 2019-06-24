@@ -4,16 +4,10 @@ Created on Thu Jun 20 23:50:54 2019
 
 @author: f.divruno
 """
-import scipy.signal as Sig
 import numpy as np
 import matplotlib.pyplot as plt
-import RFI_general_functions as RFI
 import astropy.coordinates as Coord
 import astropy.units as u
-from poliastro.twobody import Orbit
-from poliastro.bodies import Earth
-import siggen as siggen
-import scipy.constants as const
 from adcGain import adcGain
 from siggen_aph import WhiteNoiseSignal, band_limit
 
@@ -77,17 +71,30 @@ class Receiver():
         azimuth = 0
         return elev,azimuth
     
-    def plot_signal(self,mode,signal):
+    def plot_signal(self,tap,signal,mode):
         '''
-            mode: abs,abslog,lin
-            signal: RFI,Sky
+           tap: Ant_in, ADC_in, ADC_out 
+           mode: abs,abslog,lin
+           signal: RFI,Sky
         '''
-        if signal == 'RFI':
-            sig = self.Rx_signal
-            time = self.time
-        else:
-            sig = self.sky_source_rx
-            time = np.linspace(0,self.SampleRate*len(sig),len(sig))
+        if tap == 'Ant_in':
+            if signal == 'RFI':
+                sig = self.Rx_signal
+            else:
+                sig = self.sky_source_rx
+        if tap == 'ADC_in':
+            if signal == 'RFI':
+                sig = self.ADC_input_rx
+            else:
+                sig = self.ADC_input_sky
+        if tap == 'ADC_out':
+            if signal == 'RFI':
+                sig = self.ADC_output_rx
+            else:
+                sig = self.ADC_output_sky
+            
+        time = self.time        
+
                
         if mode == 'abs':
             S = np.abs(sig)
@@ -101,19 +108,33 @@ class Receiver():
         
         plt.figure()
         plt.plot(time/us,S)
-        plt.title('Received signal in telescope '+self.Name)
+        plt.title('%s signal in %s, telescope %s '%(signal,tap,self.Name))
         plt.ylabel(mode)
         plt.xlabel('us')
 
-    def plot_spectrum(self,mode,signal):
+    def plot_spectrum(self,tap,signal, mode='abs'):
         '''
+            tap: Ant_in, ADC_in, ADC_out 
             mode: 
             signal: RFI , Sky
         '''
-        if signal == 'RFI':
-            sig = self.Rx_signal
-        else:
-            sig = self.sky_source_rx
+        if tap == 'Ant_in':
+            if signal == 'RFI':
+                sig = self.Rx_signal
+            else:
+                sig = self.sky_source_rx
+        if tap == 'ADC_in':
+            if signal == 'RFI':
+                sig = self.ADC_input_rx
+            else:
+                sig = self.ADC_input_sky
+        if tap == 'ADC_out':
+            if signal == 'RFI':
+                sig = self.ADC_output_rx
+            else:
+                sig = self.ADC_output_sky
+            
+
 
         V = sig
         fs = self.SampleRate
@@ -124,7 +145,7 @@ class Receiver():
         
         plt.figure()
         plt.plot(freq/MHz,S)
-        plt.title('Received %s signal in telescope '%(signal)+self.Name)
+        plt.title('%s signal in %s, telescope %s '%(signal,tap,self.Name))
         plt.ylabel('dB')
         plt.xlabel('MHz')
         
@@ -273,10 +294,6 @@ class Receiver():
             # Filtering
             s = band_limit(s, f_s, (950*MHz,1760*MHz), (800*MHz,2000*MHz), 0.5, 50, ftype="cheby1") # [SKA-TEL-DSH-00000021 rev 2, fig 15]
              
-            # Attenuation scaling, according to the scaling strategy
-#            Gain = self.Noise_scale(s,scaling,12)
-            self.Atten =  Gain-56-32 # calculates the real value needed to set the attenuators.
-            
             # Gain
             s *= 10**((56+32+self.Atten)/20.)
             s_rx = s

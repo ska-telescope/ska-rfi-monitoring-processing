@@ -4,15 +4,8 @@ Created on Thu Jun 20 23:49:31 2019
 
 @author: f.divruno
 """
-import scipy.signal as Sig
 import numpy as np
-import matplotlib.pyplot as plt
-import RFI_general_functions as RFI
 import astropy.coordinates as Coord
-import astropy.units as u
-from poliastro.twobody import Orbit
-from poliastro.bodies import Earth
-import siggen as siggen
 import scipy.constants as const
 
 import General as General

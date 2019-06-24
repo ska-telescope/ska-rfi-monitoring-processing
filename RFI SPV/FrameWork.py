@@ -34,6 +34,8 @@ k_bolt = 1.23e-38
 
         
 '''----------------------------------
+RFI Signal Performance Verification
+
 RFI Test case #1:
     Two airplanes transmitting ADS-B and DME signals.
     Two SKA-MID telescopes
@@ -41,17 +43,13 @@ RFI Test case #1:
     ----------------------------------
 '''
 
+#%% Generation of the test case
 
 Duration = 2*ms
-SamplingRate = 5*GHz # THis is the analog sampling rate
+SamplingRate = 4*GHz # THis is the analog sampling rate
 Band = 'B2'
+scaling = 'Correlator_opimized'
 
-#GEnerate two signals: for debug, signals are included in the emitter.
-#    S  = Signal('DME',Duration,SamplingRate,1100*MHz,30,0)
-#    S1 = Signal('ADS-B',Duration,SamplingRate,1090*MHz,30,0)
-#    plt.figure()
-#    plt.plot(S.time/us,S.data)
-#    plt.plot(S.time/us,S1.data)    
 
 
 #Generate the emitters:
@@ -97,47 +95,52 @@ else:
     exit(3)
 
 if(input('Apply DISH simplified model?')==''):
-    Telescope_list = Apply_DISH(Telescope_list,Band) 
+    Telescope_list = Apply_DISH(Telescope_list,Band,scaling, atten = 0) 
     # The signal inputing to the ADC is in the variable Receiver.ADC_input_rx or ADC_input_sky
-    # The output signal is stored in Receiver.ADC_output_rx or ADC_output_sky 
+    # The output signal is stored in Receiver.ADC_output_rx (with RFI) or ADC_output_sky (without RFI)
 else:
     exit(3)
 
+#to do:
+    # Save the ADC output to files.
+    
 
-
-
-
-
-
-
-
-
-#Plot the result
+#Plot the results
 plot_signal = 1
 if plot_signal:
     for i in range(len(Telescope_list)):
-        Telescope_list[i].plot_signal('abs','RFI')
+        Telescope_list[i].plot_signal('Ant_in','RFI','abs')
+        Telescope_list[i].plot_signal('ADC_in','RFI','abs')
+        Telescope_list[i].plot_signal('ADC_out','RFI','abs')
         
-        plt.figure()
-        plt.plot(Telescope_list[0].ADC_output_sky)
-        plt.title('ADC output signal NO RFI')
+
+plot_spectrum = 1
+if plot_signal:
+    for i in range(len(Telescope_list)):
+        Telescope_list[i].plot_spectrum('Ant_in','RFI','abs')
+        Telescope_list[i].plot_spectrum('ADC_in','RFI','abs')
+        Telescope_list[i].plot_spectrum('ADC_out','RFI','abs')
 
 
-        plt.figure()
-        plt.plot(Telescope_list[0].ADC_output_rx)
-        plt.title('ADC output signal with RFI')
+#%% Verification of the results:
+        
+'''
+TO-DO: 
+   Calculate the SNR at the input and different taps of the SC model
+   Calculate the SNR degradation (with and without RFI)
 
-
-   
-#Calculate Correlation
-plot_corr = 0
+'''   
+#%% Calculate Correlation
+plot_corr = 1
 if plot_corr:
-    Corr = abs(np.fft.ifft(np.fft.fft(Telescope_list[0].Rx_signal)*np.conjugate(np.fft.fft(Telescope_list[1].Rx_signal))))
+#    Corr = abs(np.fft.ifft(np.fft.fft(Telescope_list[0].Rx_signal)*np.conjugate(np.fft.fft(Telescope_list[1].Rx_signal))))
+    Corr = abs(np.fft.ifft(np.fft.fft(Telescope_list[0].Rx_signal)*np.conjugate(np.fft.fft(Telescope_list[1].ADC_output_rx))))
     plt.figure()
     plt.plot(Corr)
     plt.title('Correlation of RFI + signal')
  
-    Corr = abs(np.fft.ifft(np.fft.fft(Telescope_list[0].sky_source_rx)*np.conjugate(np.fft.fft(Telescope_list[1].sky_source_rx))))
+#    Corr = abs(np.fft.ifft(np.fft.fft(Telescope_list[0].sky_source_rx)*np.conjugate(np.fft.fft(Telescope_list[1].sky_source_rx))))
+    Corr = abs(np.fft.ifft(np.fft.fft(Telescope_list[0].Rx_signal)*np.conjugate(np.fft.fft(Telescope_list[1].ADC_output_sky))))
     plt.figure()
     plt.plot(Corr)
     plt.title('Correlation of intended signal')
