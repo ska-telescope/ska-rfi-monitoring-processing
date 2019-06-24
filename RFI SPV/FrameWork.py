@@ -17,6 +17,8 @@ from Receiver import Receiver
 from Receive_RFI import Receive_RFI
 from Receive_Sky import Receive_Sky
 from Apply_DISH import Apply_DISH
+from General import save_data, load_data
+
 
 
 ms = 1e-3
@@ -49,7 +51,8 @@ Duration = 2*ms
 SamplingRate = 4*GHz # THis is the analog sampling rate
 Band = 'B2'
 scaling = 'Correlator_opimized'
-
+input_folder = 'C:\\RFI raw data\\RFI SPV\\'
+output_folder = 'C:\\RFI raw data\\RFI SPV\\'
 
 
 #Generate the emitters:
@@ -102,7 +105,13 @@ else:
     exit(3)
 
 #to do:
-    # Save the ADC output to files.
+    # Save the ADC output to .mat files
+if(input('Save ADC output to .mat file?')==''):
+    filename = 'RFI_SPV_'+Band+'_'+scaling +'_'+ input('RFI_SPV_'+Band+'_'+scaling +'_'+'(Number): ')
+    save_data(Telescope_list,output_folder+filename)
+else:
+     exit(3)
+    
     
 
 #Plot the results
