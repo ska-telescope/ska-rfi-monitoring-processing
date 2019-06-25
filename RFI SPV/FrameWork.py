@@ -20,7 +20,6 @@ from Apply_DISH import Apply_DISH
 from General import save_data, load_data
 
 
-
 ms = 1e-3
 us = 1e-6
 MHz = 1e6
@@ -31,8 +30,6 @@ hr = 60*minute
 km_h = km/hr
 k_bolt = 1.23e-38
 
-   
-    
 
         
 '''----------------------------------
