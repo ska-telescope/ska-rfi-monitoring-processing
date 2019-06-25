@@ -8,8 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import astropy.coordinates as Coord
 import astropy.units as u
-from adcGain import adcGain
-from siggen_aph import WhiteNoiseSignal, band_limit
+from rfiLib.adcGain import adcGain
+from rfiLib.siggen_aph import WhiteNoiseSignal, band_limit
 
 ms = 1e-3
 us = 1e-6

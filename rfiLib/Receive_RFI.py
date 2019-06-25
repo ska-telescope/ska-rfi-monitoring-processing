@@ -6,7 +6,7 @@ Created on Thu Jun 20 23:51:32 2019
 """
 import numpy as np
 
-from Path import Path
+from rfiLib.Path import Path
 
 ms = 1e-3
 us = 1e-6

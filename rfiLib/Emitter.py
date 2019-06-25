@@ -7,7 +7,7 @@ Created on Thu Jun 20 23:49:59 2019
 import numpy as np
 import astropy.coordinates as Coord
 
-from Signal import Signal
+from rfiLib.Signal import Signal
 
 ms = 1e-3
 us = 1e-6

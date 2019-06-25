@@ -7,7 +7,7 @@ Created on Thu Jun 20 23:47:19 2019
 import scipy.signal as Sig
 import numpy as np
 import matplotlib.pyplot as plt
-import RFI_general_functions as RFI
+import rfiLib as RFI
 from scipy import signal
 
 ms = 1e-3

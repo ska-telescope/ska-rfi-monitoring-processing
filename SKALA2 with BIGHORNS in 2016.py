@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 #from TIQ_process_functions import *
-import RFI_general_functions as RFI
+import rfiLib as RFI
 #from astropy.io import fits
 
 
