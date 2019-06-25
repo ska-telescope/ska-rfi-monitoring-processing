@@ -5,7 +5,7 @@ Created on Tue Jun 25 09:11:26 2019
 @author: f.divruno
 """
 import numpy as np
-import scipy.signal as signal
+#import scipy.signal as signal
 
 def generate_FM(audio,audio_SampleRate, Fc, SampleRate,freq_dev):
     N_audio = len(audio)
@@ -14,7 +14,6 @@ def generate_FM(audio,audio_SampleRate, Fc, SampleRate,freq_dev):
     t_FM = np.linspace(0,t_audio[-1],N_FM)
     audio_interp = np.interp(t_FM,t_audio,audio)
 #    audio_resampled = signal.resample(audio,int(N_FM))/max(audio) #resampled and normalized to 1
-    t_FM = np.linspace(0,t_audio[-1],N_FM)
     
     phase = np.cumsum(audio_interp)*2*np.pi*freq_dev/audio_SampleRate
     
