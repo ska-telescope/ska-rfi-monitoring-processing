@@ -29,7 +29,9 @@ from rfiLib.Receiver import Receiver
 from rfiLib.Receive_RFI import Receive_RFI
 from rfiLib.Receive_Sky import Receive_Sky
 from rfiLib.Apply_DISH import Apply_DISH
-#from rfiLib.General import save_data, load_data
+from rfiLib.General import saveAntInData, loadAntInData
+from rfiLib.General import saveAdcInData, loadAdcInData
+from rfiLib.General import saveAdcOutData, loadAdcOutData
 
 ms = 1e-3
 us = 1e-6
@@ -41,10 +43,16 @@ hr = 60*minute
 km_h = km/hr
 k_bolt = 1.23e-38
 
-   
-    
 
-        
+testCaseName = 'test1'
+promptFlg = False #interactive mode prompts user at various processing steps
+runFlg = True #can be used to skip over processing
+saveFlg = True #results are saved if true
+loadFlg = False #results are loaded if true
+plot_signal = False #plot time series signal
+plot_spectrum = False #plot spectrum
+plot_corr = False   #plot correlation
+          
 '''----------------------------------
 RFI Signal Performance Verification
 
@@ -57,81 +65,104 @@ RFI Test case #1:
 
 #%% Generation of the test case
 
-Duration = 2*ms
+Duration = 2.*ms
 SamplingRate = 4*GHz # THis is the analog sampling rate
 Band = 'B2'
 scaling = 'Correlator_opimized'
 
 
 
-#Generate the emitters:
-if(input('Generate Emitters?')==''):
-    Aeroplane1 = Emitter('Aeroplane1','Aeroplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=20*u.deg), Duration, SamplingRate,[])
-    Aeroplane2 = Emitter('Aeroplane2','Aeroplane',dict(height_i = 10*u.km, lat_i = -30.44*u.deg, lon_i=19.5*u.deg), Duration, SamplingRate,[])
+def prompt(promptStr='Press enter to continue, or anything else to abort'):
+    if promptFlg:
+        return input(promptStr)
+    else:
+        return ''
+
+
+#Generate the RFI sources or emitters:
+if((prompt('Generate RFI Sources [enter]?')=='') & runFlg):
+    rfiSrc1 = Emitter('rfiSrc1','Airplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=20*u.deg), Duration, SamplingRate,[])
+    rfiSrc2 = Emitter('rfiSrc2','Airplane',dict(height_i = 10*u.km, lat_i = -30.44*u.deg, lon_i=19.5*u.deg), Duration, SamplingRate,[])
       
-    Emitter_list = list([Aeroplane1,Aeroplane2])
+    rfiSrcL = list([rfiSrc1,rfiSrc2])
+    print('Created RFI sources: ' + rfiSrc1.Name + '  ' + rfiSrc2.Name)
 else:
-    exit(3)
+    raise SystemExit
 
 
-
-#Generate the receivers:
-if(input('Generate Receivers?')==''):
-    SKA_MID1 = Receiver('SKA001',dict(Latitude = -30.71329*u.deg, Longitude = 21.449412*u.deg),dict(Elev=90*u.deg,Azimuth=0*u.deg), Duration, SamplingRate)
-    SKA_MID2 = Receiver('SKA132',dict(Latitude = -31.340773*u.deg, Longitude = 21.267823*u.deg),dict(Elev=90*u.deg,Azimuth=0*u.deg), Duration, SamplingRate)
-    Telescope_list = list([SKA_MID1,SKA_MID2]) # List with receiver without receiving data
+#Generate the antenna receivers:
+if((prompt('Generate Antenna & Receivers [enter]?')=='') & runFlg):
+    ant1 = Receiver('ant1',dict(Latitude = -30.71329*u.deg, Longitude = 21.449412*u.deg),dict(Elev=90*u.deg,Azimuth=0*u.deg), Duration, SamplingRate)
+    ant2 = Receiver('ant2',dict(Latitude = -31.340773*u.deg, Longitude = 21.267823*u.deg),dict(Elev=90*u.deg,Azimuth=0*u.deg), Duration, SamplingRate)
+    antRxL = list([ant1,ant2]) # List with receiver without receiving data
+    print('Created antennas: ' + ant1.Name + ', ' + ant2.Name)
 else:
-    exit(3)
+    raise SystemExit
  
-#Calculate the received RFI
-if(input('Receive RFI?')==''):
-    Telescope_list = Receive_RFI(Telescope_list, Emitter_list,Duration,SamplingRate,plot_flag=0)
+#Calculate the received RFI at the antenna aperture
+if((prompt('Compute RFI at antenna aperture [enter]?')=='') & runFlg):
+    antRxL = Receive_RFI(antRxL, rfiSrcL,Duration,SamplingRate,plot_flag=0)
     # Each of the receivers has the data in Receiver.Rx_signal 
+    print('computing RFI sources at antenna aperture')
 else:
-    exit(3)
+    raise SystemExit
 
 
-#Generate the sky signal
-if(input('Generate Sky signal?')==''):
-    Sky_source = Sky('Sky_source1', dict(lat= -31.340773 *u.deg,lon= 21.44*u.deg), SamplingRate, Duration, Temperature = 10)
-
-    Sky_source_list = list([Sky_source])
+#Generate the sky signal sources
+if((prompt('Generate Sky sources [enter]?')=='') & runFlg):
+    skySrc1 = Sky('Sky_source1', dict(lat= -31.340773 *u.deg,lon= 21.44*u.deg), SamplingRate, Duration, Temperature = 10)
+    skySrcL = list([skySrc1])
+    print('Created sky source: ' + skySrc1.Name)
 else:
-    exit(3)
+    raise SystemExit
 
-if(input('Receive Sky signal?')==''):
-    #Calculate the received sky signal and sum it to the RFI
-    Telescope_list = Receive_Sky(Telescope_list,Sky_source_list, SamplingRate, Duration,plot_flag=0)
-    #The received signal is stored in Rx_signal, the sky signal only is stored in sky_signal_rx
+#Calculate the received sky signal at the antenna aperture and sum it with the RFI
+#The received signal is stored in Rx_signal, the sky signal only is stored in sky_signal_rx
+if((prompt('Compute Sky source at antenna aperture [enter]?')=='') & runFlg):
+    antRxL = Receive_Sky(antRxL,skySrcL, SamplingRate, Duration,plot_flag=0)
+    print('computing Sky sources at antenna aperture')
 else:
-    exit(3)
+    raise SystemExit
 
-if(input('Apply DISH simplified model?')==''):
-    Telescope_list = Apply_DISH(Telescope_list,Band,scaling, atten = 0) 
-    # The signal inputing to the ADC is in the variable Receiver.ADC_input_rx or ADC_input_sky
-    # The output signal is stored in Receiver.ADC_output_rx (with RFI) or ADC_output_sky (without RFI)
+
+
+#Apply signals at aperture to the receiver chain and save points along the chain
+#The output signal is stored in Receiver.ADC_output_rx (with RFI) or ADC_output_sky (without RFI)
+if((prompt('Apply aperture signals to rx chain model [enter]?')=='') & runFlg):
+    antRxL = Apply_DISH(antRxL,Band,scaling, atten = 0) 
+    print('Taking antenna aperture singal applying to analog signal chain of :' + ant1.Name + '  & ' + ant2.Name)
 else:
-    exit(3)
+    raise SystemExit
 
 #to do:
     # Save the ADC output to files.
+
+if saveFlg:
+    saveAntInData(antRxL, testCaseName)
+    saveAdcInData(antRxL, testCaseName)
+    saveAdcOutData(antRxL, testCaseName)
+    
+
+if loadFlg:
+    antRxL2 = list([Receiver('ant1'),Receiver('ant2')])
+    antRxL2 = loadAntInData(antRxL2, 'test1')
     
 
 #Plot the results
-plot_signal = 1
+
 if plot_signal:
-    for i in range(len(Telescope_list)):
-        Telescope_list[i].plot_signal('Ant_in','RFI','abs')
-        Telescope_list[i].plot_signal('ADC_in','RFI','abs')
-        Telescope_list[i].plot_signal('ADC_out','RFI','abs')
+    for antRx in antRxL:
+        antRx.plot_signal('Ant_in','RFI','abs')
+        antRx.plot_signal('ADC_in','RFI','abs')
+        antRx.plot_signal('ADC_out','RFI','abs')
         
 
-plot_spectrum = 1
-if plot_signal:
-    for i in range(len(Telescope_list)):
-        Telescope_list[i].plot_spectrum('Ant_in','RFI','abs')
-        Telescope_list[i].plot_spectrum('ADC_in','RFI','abs')
-        Telescope_list[i].plot_spectrum('ADC_out','RFI','abs')
+
+if plot_spectrum:
+    for antRx in antRxL:
+        antRx.plot_spectrum('Ant_in','RFI','abs')
+        antRx.plot_spectrum('ADC_in','RFI','abs')
+        antRx.plot_spectrum('ADC_out','RFI','abs')
 
 
 #%% Verification of the results:
@@ -143,16 +174,16 @@ TO-DO:
 
 '''   
 #%% Calculate Correlation
-plot_corr = 1
+
 if plot_corr:
-#    Corr = abs(np.fft.ifft(np.fft.fft(Telescope_list[0].Rx_signal)*np.conjugate(np.fft.fft(Telescope_list[1].Rx_signal))))
-    Corr = abs(np.fft.ifft(np.fft.fft(Telescope_list[0].Rx_signal)*np.conjugate(np.fft.fft(Telescope_list[1].ADC_output_rx))))
+#    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].Rx_signal)*np.conjugate(np.fft.fft(antRxL[1].Rx_signal))))
+    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].Rx_signal)*np.conjugate(np.fft.fft(antRxL[1].ADC_output_rx))))
     plt.figure()
     plt.plot(Corr)
     plt.title('Correlation of RFI + signal')
  
-#    Corr = abs(np.fft.ifft(np.fft.fft(Telescope_list[0].sky_source_rx)*np.conjugate(np.fft.fft(Telescope_list[1].sky_source_rx))))
-    Corr = abs(np.fft.ifft(np.fft.fft(Telescope_list[0].Rx_signal)*np.conjugate(np.fft.fft(Telescope_list[1].ADC_output_sky))))
+#    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].sky_source_rx)*np.conjugate(np.fft.fft(antRxL[1].sky_source_rx))))
+    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].Rx_signal)*np.conjugate(np.fft.fft(antRxL[1].ADC_output_sky))))
     plt.figure()
     plt.plot(Corr)
     plt.title('Correlation of intended signal')

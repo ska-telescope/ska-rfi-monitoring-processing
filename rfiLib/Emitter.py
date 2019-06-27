@@ -31,29 +31,30 @@ class Emitter():
         self.position_params = position_params 
         self.Pos_ini = Pos_ini
         
-        if Emit_type == "Aeroplane":
+        if Emit_type == "Airplane":
             self.Signals = list()
             DME_power = 60 #dBm = 1kW
             ADSB_power = 53 #dBm = 250W
             self.Signals.append(Signal('DME',self.Duration,self.SampleRate,1100*MHz,DME_power,0,random_seed=[]))
             self.Signals.append(Signal('ADS-B',self.Duration,self.SampleRate,1090*MHz,ADSB_power,0,random_seed=[]))
-        
-        if Emit_type == 'Sky':
+        elif Emit_type == 'Sky':
             self.Signals = list()
             scale = 1 # needs some scaling that makes sense 
             self.Signals.append(scale*self.sky_signal(self.SampleRate,self.Duration))
-                        
+        else:
+            raise Exception("Can't instantiate emitter. Illegal RFI emitter type: " + Emit_type)                
             
         self.Atitude()
 
     
     def Atitude(self):
         # generates (x,y,z) coordinates in time
-        if self.Emit_type == "Aeroplane":
+        if self.Emit_type == "Airplane":
             self.Pos = self.propagate_aeroplane()
-
-        if self.Emit_type == "Sky":
+        elif self.Emit_type == "Sky":
             self.Pos = self.propagate_aeroplane()
+        else:
+            raise Exception("Can't set Atitude position. Illegal RFI emitter type: " + self.Emit_type)                
 
     
 #        if Emit_type == "NGSO_Sat":
