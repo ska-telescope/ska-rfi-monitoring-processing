@@ -11,7 +11,7 @@ Processing of SKALA2 measurements in 2013.
 import numpy as np
 import matplotlib.pyplot as plt
 #from TIQ_process_functions import *
-import RFI_general_functions as RFI
+import rfiLib as RFI
 
 #%%
 

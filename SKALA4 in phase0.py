@@ -11,9 +11,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import * 
 import matplotlib
-import RFI_general_functions as RFI
+import rfiLib as RFI
 from scipy import signal 
-#from RFI_general_functions import * # RFI functions.
+#from rfiLib import * # RFI functions.
 
 font = {'family' : 'DejaVu Sans','weight' : 'normal','size'   : 22}
 matplotlib.rc('font', **font)

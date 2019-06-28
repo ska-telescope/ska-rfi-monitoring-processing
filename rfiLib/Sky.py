@@ -8,7 +8,7 @@ import numpy as np
 import astropy.coordinates as Coord
 import scipy.constants as const
 
-import General as General
+import rfiLib.General as General
 
 ms = 1e-3
 us = 1e-6

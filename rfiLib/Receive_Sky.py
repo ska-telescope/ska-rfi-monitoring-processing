@@ -5,7 +5,7 @@ Created on Thu Jun 20 23:52:03 2019
 @author: f.divruno
 """
 
-import General as General
+import rfiLib.General as General
 
 '''----------------------------------
 

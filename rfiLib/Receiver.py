@@ -3,13 +3,14 @@
 Created on Thu Jun 20 23:50:54 2019
 
 @author: f.divruno
+@revised: G. Hovey; added default parameters to initialize class
 """
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.coordinates as Coord
 import astropy.units as u
-from adcGain import adcGain
-from siggen_aph import WhiteNoiseSignal, band_limit
+from rfiLib.adcGain import adcGain
+from rfiLib.siggen_aph import WhiteNoiseSignal, band_limit
 
 ms = 1e-3
 us = 1e-6
@@ -22,7 +23,11 @@ km_h = km/hr
 k_bolt = 1.38e-23
         
 class Receiver():
-    def __init__(self,Name,Position,Pointing,duration,SampleRate):
+    def __init__(self,Name='',
+                 Position=dict(Latitude = -30.71329*u.deg, \
+                               Longitude = 21.449412*u.deg),\
+                               Pointing=dict(Elev=90*u.deg,Azimuth=0*u.deg),\
+                               duration=4.*GHz,SampleRate=.5*ms):
         self.height = 0
         self.Name = Name
         self.lat = Position['Latitude']
@@ -34,10 +39,10 @@ class Receiver():
         self.Pos = [Posx,Posy,Posz]
         self.Pointing = Pointing
         self.SampleRate = SampleRate
+        self.Duration = duration
         self.sky_source_rx = []
         self.Rx_signal = []
         self.time = []
-        self.Duration = duration
         #self.Pointing = self.Pointing()
         
         
