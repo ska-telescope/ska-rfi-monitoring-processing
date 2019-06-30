@@ -47,20 +47,40 @@ class Receiver():
         
         
         
-    def antenna_gain(angle):
-        if angle<1:
+def antenna_gain(angle):
+    
+    N = np.size(angle)
+    G = np.zeros(N)
+    delay_samples = np.zeros(N)
+    angle = np.abs(angle)
+    if N >1:
+        for i in range(N):
+            if angle[i]<0.1:
+                G[i] = 60
+                delay_samples[i] = 0
+        
+            elif (angle[i]>0.1) & (angle[i]<3.5):
+                G[i] = 20-40*np.log10(angle[i]) # dB
+                delay_samples[i] = np.random.rand(1)*10 # maximum random delay because of the sidelobes = 10/fs = 2.5 ns en 4Gsps
+                    
+            else:
+                G[i]=0
+                delay_samples[i] = np.random.rand(1)*10
+    else:
+        if angle<0.1:
             G = 60
             delay_samples = 0
-
-        elif (angle>1) & (angle<48):
-            G = 32-25*np.log10(angle)
+    
+        elif (angle>0.1) & (angle<3.5):
+            G = 32-25*np.log10(angle) # dB
             delay_samples = np.random.rand(1)*10 # maximum random delay because of the sidelobes = 10/fs = 2.5 ns en 4Gsps
-            return G            
+                
         else:
             G=0
             delay_samples = np.random.rand(1)*10
-        
-        return delay_samples,G # gain in the beam    
+ 
+    return delay_samples,G # gain in the beam    
+    
     
     def plot_gain(self):
         for angle in range(180):
