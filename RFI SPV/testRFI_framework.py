@@ -58,7 +58,7 @@ RFI Test case #1:
 
 #file parameters
 testCaseName = 'test1'
-skaMidAntPosFileSpec = './skaAntPositions.csv'
+skaMidAntPosFileSpec = './skaMidAntPositions.csv'
 
 #antenna pair to test
 tstAnt1Key = 'SKA001'
