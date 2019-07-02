@@ -4,7 +4,8 @@ Created on Thu Jun 20 23:50:54 2019
 
 @author: f.divruno
 @revised: G. Hovey; added default parameters to initialize class
-@revised: G. Hovey; somehow a copy with antenna_gain unindented got into the repository.
+@revised: G. Hovey; somehow a copy with antenna_gain unindented got into the repository causing class functions to disappear. Fix it.
+
 """
 import numpy as np
 import matplotlib.pyplot as plt
