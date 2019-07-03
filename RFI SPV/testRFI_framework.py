@@ -6,12 +6,15 @@ Derived from f. divruno FrameWork.py and modified to use support functions in
 a support library. Make sure this library is in your PYTHONPATH
 
 @author: G. Hovey
-@author: f.divruno 
+@author: f.divruno
+@revised: G. Hovey;added code to reference antenna positions from csv file using pandas
+@revised: G. Hovey;organized and documented test parameters 
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.units as u
+import pandas as pd
 
 #RFI support functions
 """
@@ -43,16 +46,6 @@ hr = 60*minute
 km_h = km/hr
 k_bolt = 1.23e-38
 
-
-testCaseName = 'test1'
-promptFlg = False #interactive mode prompts user at various processing steps
-runFlg = True #can be used to skip over processing
-saveFlg = True #results are saved if true
-loadFlg = False #results are loaded if true
-plot_signal = False #plot time series signal
-plot_spectrum = False #plot spectrum
-plot_corr = False   #plot correlation
-          
 '''----------------------------------
 RFI Signal Performance Verification
 
@@ -63,14 +56,35 @@ RFI Test case #1:
     ----------------------------------
 '''
 
-#%% Generation of the test case
+#file parameters
+testCaseName = 'test1'
+skaMidAntPosFileSpec = './skaMidAntPositions.csv'
 
+#antenna pair to test
+tstAnt1Key = 'SKA001'
+tstAnt2Key = 'SKA005'
+
+#antenna pointing az and el
+antAzEl = dict(Elev=90*u.deg,Azimuth=0*u.deg)
+
+#Receiver and temporal parameters
+Band = 'B2'
 Duration = 2.*ms
 SamplingRate = 4*GHz # THis is the analog sampling rate
-Band = 'B2'
+#ADC scaling
 scaling = 'Correlator_opimized'
 
+#Test configuration parameters
+promptFlg = False #interactive mode prompts user at various processing steps
+runFlg = True #can be used to skip over processing
+saveFlg = True #results are saved if true
+loadFlg = False #results are loaded if true
+plot_signal = False #plot time series signal
+plot_spectrum = False #plot spectrum
+plot_corr = False   #plot correlation
+          
 
+#%% Generation of the test case
 
 def prompt(promptStr='Press enter to continue, or anything else to abort'):
     if promptFlg:
@@ -78,6 +92,7 @@ def prompt(promptStr='Press enter to continue, or anything else to abort'):
     else:
         return ''
 
+skaMidAntPos = pd.read_csv(skaMidAntPosFileSpec, comment='#', index_col=0)
 
 #Generate the RFI sources or emitters:
 if((prompt('Generate RFI Sources [enter]?')=='') & runFlg):
@@ -92,10 +107,17 @@ else:
 
 #Generate the antenna receivers:
 if((prompt('Generate Antenna & Receivers [enter]?')=='') & runFlg):
-    ant1 = Receiver('ant1',dict(Latitude = -30.71329*u.deg, Longitude = 21.449412*u.deg),dict(Elev=90*u.deg,Azimuth=0*u.deg), Duration, SamplingRate)
-    ant2 = Receiver('ant2',dict(Latitude = -31.340773*u.deg, Longitude = 21.267823*u.deg),dict(Elev=90*u.deg,Azimuth=0*u.deg), Duration, SamplingRate)
-    antRxL = list([ant1,ant2]) # List with receiver without receiving data
-    print('Created antennas: ' + ant1.Name + ', ' + ant2.Name)
+    antRx1 = Receiver(skaMidAntPos.loc[tstAnt1Key].name,
+                    dict(Latitude = skaMidAntPos.loc[tstAnt1Key].lat*u.deg, 
+                         Longitude = skaMidAntPos.loc[tstAnt1Key].lon*u.deg),
+                         antAzEl, Duration, SamplingRate)
+    
+    antRx2 = Receiver(skaMidAntPos.loc[tstAnt2Key].name,
+                    dict(Latitude = skaMidAntPos.loc[tstAnt2Key].lat*u.deg, 
+                         Longitude = skaMidAntPos.loc[tstAnt2Key].lon*u.deg),
+                         antAzEl, Duration, SamplingRate)
+    antRxL = list([antRx1,antRx2]) # List with receiver without receiving data
+    print('Created antennas: ' + antRx1.Name + ', ' + antRx2.Name)
 else:
     raise SystemExit
  
@@ -130,7 +152,7 @@ else:
 #The output signal is stored in Receiver.ADC_output_rx (with RFI) or ADC_output_sky (without RFI)
 if((prompt('Apply aperture signals to rx chain model [enter]?')=='') & runFlg):
     antRxL = Apply_DISH(antRxL,Band,scaling, atten = 0) 
-    print('Taking antenna aperture singal applying to analog signal chain of :' + ant1.Name + '  & ' + ant2.Name)
+    print('Taking antenna aperture singal applying to analog signal chain of :' + antRx1.Name + '  & ' + antRx2.Name)
 else:
     raise SystemExit
 
