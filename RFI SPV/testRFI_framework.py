@@ -79,8 +79,8 @@ promptFlg = False #interactive mode prompts user at various processing steps
 runFlg = True #can be used to skip over processing
 saveFlg = True #results are saved if true
 loadFlg = False #results are loaded if true
-plot_signal = False #plot time series signal
-plot_spectrum = False #plot spectrum
+plot_signal = True #plot time series signal
+plot_spectrum = True #plot spectrum
 plot_corr = False   #plot correlation
           
 
@@ -174,17 +174,17 @@ if loadFlg:
 
 if plot_signal:
     for antRx in antRxL:
-        antRx.plot_signal('Ant_in','RFI','abs')
-        antRx.plot_signal('ADC_in','RFI','abs')
-        antRx.plot_signal('ADC_out','RFI','abs')
+        antRx.plot_signal('antIn','RFI','volt') #mode= absVolt, volt, powerLin, powerLog
+        antRx.plot_signal('adcIn','RFI','volt')
+        antRx.plot_signal('adcOut','RFI','volt') 
         
 
 
 if plot_spectrum:
     for antRx in antRxL:
-        antRx.plot_spectrum('Ant_in','RFI','abs')
-        antRx.plot_spectrum('ADC_in','RFI','abs')
-        antRx.plot_spectrum('ADC_out','RFI','abs')
+        antRx.plot_spectrum('antIn','RFI','abs')
+        antRx.plot_spectrum('adcIn','RFI','abs')
+        antRx.plot_spectrum('adcOut','RFI','abs')
 
 
 #%% Verification of the results:

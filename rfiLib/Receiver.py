@@ -100,80 +100,111 @@ class Receiver():
     
     def plot_signal(self,tap,signal,mode):
         '''
-           tap: Ant_in, ADC_in, ADC_out 
-           mode: abs,abslog,lin
+           tap: antIn, adcIn, adcOut 
+           mode: absVolt, volt, powerLin, powerLog
            signal: RFI,Sky
+           Plots the time domain signal in power or voltage 
+           
         '''
-        if tap == 'Ant_in':
+        if tap == 'antIn':
             if signal == 'RFI':
-                sig = self.Rx_signal
+                sig = np.copy(self.Rx_signal)
             else:
-                sig = self.sky_source_rx
-        if tap == 'ADC_in':
+                sig = np.copy(self.sky_source_rx)
+        elif tap == 'adcIn':
             if signal == 'RFI':
-                sig = self.ADC_input_rx
+                sig = np.copy(self.ADC_input_rx)
             else:
-                sig = self.ADC_input_sky
-        if tap == 'ADC_out':
+                sig = np.copy(self.ADC_input_sky)
+        elif tap == 'adcOut':
             if signal == 'RFI':
-                sig = self.ADC_output_rx
+                sig = np.copy(self.ADC_output_rx)
             else:
-                sig = self.ADC_output_sky
-            
+                sig = np.copy(self.ADC_output_sky)
+        else:
+            print('The tap selected is non existant: \nChoose: antIn, adcIn, adcOut')
+            raise SystemExit    
+    
         time = self.time        
 
                
-        if mode == 'abs':
-            S = np.abs(sig)
+        if mode == 'absVolt':
+            S = np.abs(sig)         #Instantaneous voltage in absolute V
+            unit = 'magnitude (V)'
         
-        if mode == 'abslog':
+        elif mode == 'volt':
+            S = sig                 #Instantaneous voltage in V
+            unit = 'V'
+        
+        elif mode =='powerLin':
+            S = np.abs(sig)**2/50   # Instantaneous power in W
+            unit = 'Watts'
+            
+        elif mode =='powerLog':     # Instantaneous power in dBm
+            S = 10*np.log10(np.abs(sig)**2/50*1e3) 
+            unit = 'dBm'
+            
+        elif mode == 'voltLog':     # Instantaneous Voltage in dBV
             S = 20*np.log10(np.abs(sig))
+            unit = 'dBV'
 
-        if mode == 'lin':
-            S = 20*np.log10(np.abs(sig))
 
+        if tap == 'adcOut':
+            S = sig         #in ADC out the value is ADC counts
+            unit = 'ADC counts'
         
         plt.figure()
         plt.plot(time/us,S)
         plt.title('%s signal in %s, telescope %s '%(signal,tap,self.Name))
-        plt.ylabel(mode)
+        plt.ylabel(unit)
         plt.xlabel('us')
 
-    def plot_spectrum(self,tap,signal, mode='abs'):
+    def plot_spectrum(self,tap,signal, mode='power'):
         '''
-            tap: Ant_in, ADC_in, ADC_out 
-            mode: 
+            tap: antIn, adcIn, adcOut 
+            mode: power, voltage
             signal: RFI , Sky
         '''
-        if tap == 'Ant_in':
+        if tap == 'antIn':
             if signal == 'RFI':
-                sig = self.Rx_signal
+                sig = np.copy(self.Rx_signal)
             else:
-                sig = self.sky_source_rx
-        if tap == 'ADC_in':
+                sig = np.copy(self.sky_source_rx)
+        elif tap == 'adcIn':
             if signal == 'RFI':
-                sig = self.ADC_input_rx
+                sig = np.copy(self.ADC_input_rx)
             else:
-                sig = self.ADC_input_sky
-        if tap == 'ADC_out':
+                sig = np.copy(self.ADC_input_sky)
+        elif tap == 'adcOut':
             if signal == 'RFI':
-                sig = self.ADC_output_rx
+                sig = np.copy(self.ADC_output_rx)
             else:
-                sig = self.ADC_output_sky
-            
+                sig = np.copy(self.ADC_output_sky)
+        else:
+            print('The tap selected is non existant: \nChoose: antIn, adcIn, adcOut')
+            raise SystemExit    
 
 
         V = sig
         fs = self.SampleRate
         N = len(V)
-        S = 10*np.log10(np.abs(np.fft.fft(V)))
+        if tap == 'adcOut':
+            S = 10*np.log10(np.abs(np.fft.fft(V)))
+            ylabel = 'Counts [dBcounts]'
+        else:    
+            if mode == 'power':
+                S = 10*np.log10(np.abs(np.fft.fft(V))**2/50*1e3)
+                ylabel = 'Power [dBm]'
+            else:
+                S = 10*np.log10(np.abs(np.fft.fft(V))**2)
+                ylabel = 'Voltage [dBV]'
+
         freq = (np.fft.fftfreq(N, d=1/fs))
-        
         
         plt.figure()
         plt.plot(freq/MHz,S)
         plt.title('%s signal in %s, telescope %s '%(signal,tap,self.Name))
-        plt.ylabel('dB')
+        plt.ylabel(ylabel)
         plt.xlabel('MHz')
         
     
@@ -198,8 +229,7 @@ class Receiver():
             returns a gain in dB to scale the noise signal, so that 1 digitizer level is
             E = 0.335*Vrms in the case of Correlator_optimized.
             In the case of Linearity_optimized scales the peak signal to fit in the ADC range.
-            
-            
+           
         """
         if scaling == 'Correlator_opimized':
             Vrms = np.sqrt(np.sum(s**2)/len(s))
