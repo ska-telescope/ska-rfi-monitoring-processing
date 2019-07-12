@@ -59,6 +59,7 @@ RFI Test case #1:
 #file parameters
 testCaseName = 'test1'
 skaMidAntPosFileSpec = './skaMidAntPositions.csv'
+randomSeed = 55.
 
 #antenna pair to test
 tstAnt1Key = 'SKA001'
@@ -71,6 +72,7 @@ antAzEl = dict(Elev=90*u.deg,Azimuth=0*u.deg)
 Band = 'B2'
 Duration = 2.*ms
 SamplingRate = 4*GHz # THis is the analog sampling rate
+
 #ADC scaling
 scaling = 'Correlator_opimized'
 
@@ -97,8 +99,8 @@ skaMidAntPos = pd.read_csv(skaMidAntPosFileSpec, comment='#', index_col=0)
 #Generate the RFI sources or emitters:
 if((prompt('Generate RFI Sources [enter]?')=='') & runFlg):
     rfiSrcL = list([])
-    rfiSrcL.append(Emitter('rfiSrc1','Airplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=20*u.deg), Duration, SamplingRate,[]))
-    rfiSrcL.append(Emitter('rfiSrc2','Airplane',dict(height_i = 10*u.km, lat_i = -30.44*u.deg, lon_i=19.5*u.deg), Duration, SamplingRate,[]))
+    rfiSrcL.append(Emitter('rfiSrc1','Airplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=20*u.deg), Duration, SamplingRate,[],random_seed=randomSeed))
+    rfiSrcL.append(Emitter('rfiSrc2','Airplane',dict(height_i = 10*u.km, lat_i = -30.44*u.deg, lon_i=19.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed))
 
 
     print('Created RFI sources: ')
@@ -198,9 +200,9 @@ if plot_signal:
 
 if plot_spectrum:
     for antRx in antRxL:
-        antRx.plot_spectrum('antIn','RFI','abs')
-        antRx.plot_spectrum('adcIn','RFI','abs')
-        antRx.plot_spectrum('adcOut','RFI','abs')
+        antRx.plot_spectrum('antIn','RFI','power')
+        antRx.plot_spectrum('adcIn','RFI','power')
+        antRx.plot_spectrum('adcOut','RFI','power')
 
 
 #%% Verification of the results:
@@ -211,6 +213,7 @@ TO-DO:
    Calculate the SNR degradation (with and without RFI)
 
 '''   
+
 #%% Calculate Correlation
 
 if plot_corr:
