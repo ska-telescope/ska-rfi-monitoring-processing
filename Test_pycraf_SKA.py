@@ -6,10 +6,10 @@ from collections import namedtuple, OrderedDict
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy import units as u
-from astropy.utils.console import ProgressBar
 from pycraf import pathprof
 from pycraf import conversions as cnv
 import xlrd
+import pandas as pd
 
 pathprof.SrtmConf.set(download='missing', server='viewpano')
 
@@ -20,8 +20,21 @@ pathprof.SrtmConf.set(download='missing', server='viewpano')
     Set the coordinates of the transmitter.
 ===========================================
 '''
+
+
+culpritsCsvFile = r'C:\Users\F.Divruno\Dropbox (SKA)\Python_codes\SKA1_Mid_EMC_analysis_locations.csv'
+aux = pd.read_csv(culpritsCsvFile,comment='#')
+print('\n\n\n\n')
+print(aux.location)
+loc_num = int(input('\n\nSelect location to analyze: '))
+location = aux.location[loc_num]
+
+Transmitter = location
+lon_tx = aux.lon[loc_num]*u.deg
+lat_tx = aux.lat[loc_num]*u.deg
+
 #SKA_MID coordinates for the KAPB
-site, lon_tx, lat_tx =  'KAPB', 21.43138889* u.deg, -30.75277778 * u.deg
+#site, lon_tx, lat_tx =  'KAPB', 21.43138889* u.deg, -30.75277778 * u.deg
 
 #SKA_MID coordinates for the EOC
 #site, lon_tx, lat_tx =  'EOC', 21.993900* u.deg, -30.973975 * u.deg
@@ -48,9 +61,9 @@ site, lon_tx, lat_tx =  'KAPB', 21.43138889* u.deg, -30.75277778 * u.deg
 '''
 
 
-map_size_lon, map_size_lat = 0.25 * u.deg, 0.25 * u.deg
+map_size_lon, map_size_lat = .5 * u.deg, .5 * u.deg
 map_resolution = 0.001* u.deg
-hprof_step = 10 * u.m
+hprof_step = 100 * u.m
 
 # get the data for the map
 lons, lats, heightmap = pathprof.srtm_height_map(
@@ -75,12 +88,12 @@ sites = OrderedDict([
     #('Low_E4', Site('Low_E4', (116.75, -26.835), (60, -20), 'k')),
     ('Mid_114', Site('Mid_114', (21.452432,-30.739759), (30, -40), 'k')),
     ('Mid_121', Site('Mid_121', (21.406843,-30.803121), (-50, +20), 'k')),
-    ('Mid_124', Site('Mid_124', (21.804492, -30.84449), (-35, +25), 'k')),
-    ('Mid_020', Site('Mid_020', (21.4473, 	-30.6631), (-35, +25), 'k')),
-    ('Mid_120', Site('Mid_120', (21.6973, 	-30.8837), (-35, +25), 'k')),
-    ('Mid_124', Site('Mid_124', (21.8045, 	-30.8445), (-35, +25), 'k')),
-    ('Mid_021', Site('Mid_021', (21.9232, 	-30.7791), (-35, +25), 'k')),
-    ('Mid_119', Site('Mid_119', (21.3971606, 	-30.7785514), (-35, +25), 'k')),        
+#    ('Mid_124', Site('Mid_124', (21.804492, -30.84449), (-35, +25), 'k')),
+#    ('Mid_020', Site('Mid_020', (21.4473, 	-30.6631), (-35, +25), 'k')),
+#    ('Mid_120', Site('Mid_120', (21.6973, 	-30.8837), (-35, +25), 'k')),
+#    ('Mid_124', Site('Mid_124', (21.8045, 	-30.8445), (-35, +25), 'k')),
+#    ('Mid_021', Site('Mid_021', (21.9232, 	-30.7791), (-35, +25), 'k')),
+#    ('Mid_119', Site('Mid_119', (21.3971606, 	-30.7785514), (-35, +25), 'k')),        
     ])
 
 #%%
@@ -161,13 +174,14 @@ for i in range(len(long_x)):
 
 '''
 ===========================================
-    Calculate the path loss
+    Calculate the attenuation map
      
 ===========================================
 '''
 # Here input the patameters for the ITU-R 452-16 model
 
-freq = 0.350 * u.GHz
+freq_string = input('\nSpecify the frequency range (in GHz): ')
+freq = int(freq_string) * u.GHz
 omega = 0. * u.percent  # fraction of path over sea
 temperature = 290. * u.K
 pressure = 1013. * u.hPa
@@ -243,7 +257,7 @@ ax.set_autoscale_on(False)
 cbax.set_autoscale_on(False)
 
 
-# Annotate the coordinates of the interest sites and searches for the att levels.
+# Annotate the coordinates of the interest sites and searches for the attenuation levels.
 
 lat_mesh, lon_mesh = np.meshgrid(_lats,_lons) # hace un mesh para buscar los puntos
 for site_id, site in sites.items():
@@ -267,13 +281,12 @@ ax.xaxis.tick_top()
 ax.xaxis.set_label_position('top')
 plt.show()
 
-
-
+#%%
 
 '''
 ===========================================
     Plot the terrain map with attenuation contours
-    Also add the contours for FSPL. 
+    Also add the contours for Free Space Path Loss. 
     
 ===========================================
 '''
@@ -299,8 +312,8 @@ cim = ax.imshow(
 
 _fspl_atten = results['L_bfsg'] 
 
-ax.contour(_total_atten.to(cnv.dB).value, levels=[100],
-           colors=['green'], linestyles='-',
+ax.contour(_total_atten.to(cnv.dB).value, levels=[100,120,140,160],
+           linestyles='-',
            origin='lower',
            extent=(_lons[0], _lons[-1], _lats[0], _lats[-1]),
            alpha=1)
@@ -341,9 +354,6 @@ ax.set_xlim([_lons[0],_lons[-1]])
 ===========================================
 '''
 
-
-
-
 lat_mesh, lon_mesh = np.meshgrid(_lats,_lons) # mesh in lats and longs
 
 for k in range(len(long_x)-1):
@@ -352,45 +362,42 @@ for k in range(len(long_x)-1):
     i,j = np.unravel_index(aux.argmin(),aux.shape)
     print('Antenna: %s - Att: %.2f'%(name_x[k],(_total_atten.to(cnv.dB).value[j,i])))
 
-
-
 #%%
-    
 
 '''
 ===========================================
     Find the attenuation at each position of SKA antennas using path info
 ===========================================
 '''
-
-N_ant = len(long_x)-1
-N_freqs = 50
-freqs = np.logspace(np.log10(350),np.log10(15400),N_freqs)*u.MHz
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
-Atten_ant = np.zeros([N_ant,N_freqs])
-results=[]
-hprof_cache =[]
-hprof_step=100*u.m
-
-for k in range(N_ant):
-    hprof_cache = pathprof.height_path_data(lon_tx,
-                                            lat_tx,
-                                            long_x[k]*u.deg,
-                                            lat_x[k]*u.deg,
-                                            hprof_step)
-    for i in range(N_freqs):
-        results = pathprof.atten_path_fast(freqs[i],
-                                        temperature,
-                                        pressure,
-                                        h_tg, h_rg,
-                                        timepercent,
-                                        hprof_cache,  # dict_like
-                                        )
-        Atten_ant[k,i] = results['L_b'][-1].value
-#        _total_atten = results['L_b']  # L_b is the total attenuation, considering all the factors.
-#        _fspl_atten = results['L_bfsg']  # considers only the free space loss
-        print(i,k,' atten value ',Atten_ant[k,i]) 
-        
-fig = plt.figure(figsize=(10, 10))
-plt.semilogx(freqs,np.transpose(Atten_ant))
-plt.grid()
+if input('find attenuation at each antenna? (Y - N)')=='Y':
+    N_ant = len(long_x)-1
+    N_freqs = 50
+    freqs = np.logspace(np.log10(350),np.log10(15400),N_freqs)*u.MHz
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+    Atten_ant = np.zeros([N_ant,N_freqs])
+    results=[]
+    hprof_cache =[]
+    hprof_step=100*u.m
+    
+    for k in range(N_ant):
+        hprof_cache = pathprof.height_path_data(lon_tx,
+                                                lat_tx,
+                                                long_x[k]*u.deg,
+                                                lat_x[k]*u.deg,
+                                                hprof_step)
+        for i in range(N_freqs):
+            results = pathprof.atten_path_fast(freqs[i],
+                                            temperature,
+                                            pressure,
+                                            h_tg, h_rg,
+                                            timepercent,
+                                            hprof_cache,  # dict_like
+                                            )
+            Atten_ant[k,i] = results['L_b'][-1].value #gets the last value of the attenuation path.
+    #        _total_atten = results['L_b']  # L_b is the total attenuation, considering all the factors.
+    #        _fspl_atten = results['L_bfsg']  # considers only the free space loss
+            print(i,k,' atten value ',Atten_ant[k,i]) 
+            
+    fig = plt.figure(figsize=(10, 10))
+    plt.semilogx(freqs,np.transpose(Atten_ant))
+    plt.grid()
