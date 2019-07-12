@@ -83,7 +83,7 @@ class Signal():
             env = np.zeros(int(period*SamplingFreq))
             for i in range(120):
                 try:
-                    np.random.seed(self.Seed*i)
+                    np.random.seed(int(self.Seed*i))
                 except:
                     np.random.seed()
                 pulse_shift = (np.round(np.random.random(1))).astype(int)
@@ -110,12 +110,13 @@ class Signal():
             samples_sym = int((SymLen*fs)) #number of samples in a symbol
             N_Symbols = int((L/SymLen)) #number of symbles + 1 because of the rounding.
             samples_tot = int((N_Symbols*samples_sym)) # total number of samples
-            #np.random.seed(self.Seed) #loads the seed in case of wanting to repeat the same signal.
+            np.random.seed(int(self.Seed*1)) #loads the seed in case of wanting to repeat the same signal. the multiplier changes the seed every time is used in the test case
             ini_phase = np.random.rand(1)*2*np.pi #random phase for the signal generator
             S = np.zeros(samples_tot)
             t = np.zeros(samples_tot)
 
             N = samples_sym
+            np.random.seed(int(self.Seed*2)) #loads the seed 
             displace = int(np.random.rand(1)*(N*0.25))
             for i in range(N_Symbols):
                 t_aux,S[i*samples_sym:(i+1)*samples_sym] = self.Symbol(ini_phase, displace)        
@@ -130,9 +131,10 @@ class Signal():
             samples_sym = int(SymLen*fs) #number of samples in a symbol
             N_Symbols = int(L/SymLen)+1 #number of symbles + 1 because of the rounding.
             samples_tot = int(round(N_Symbols*SymLen*fs)) # total number of samples
-            #np.random.seed(self.Seed) #loads the seed in case of wanting to repeat the same signal.
+            np.random.seed(int(self.Seed*3)) #loads the seed in case of wanting to repeat the same signal.
             ini_phase = np.random.rand(1)*2*np.pi #random phase for the signal generator
             N = samples_sym
+            np.random.seed(int(self.Seed*4)) #loads the seed in case of wanting to repeat the same signal.
             displace = int(np.random.rand(1)*(N*0.25))
             S = np.zeros(samples_tot)
             t = np.zeros(samples_tot)
