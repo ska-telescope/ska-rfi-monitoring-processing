@@ -96,31 +96,54 @@ skaMidAntPos = pd.read_csv(skaMidAntPosFileSpec, comment='#', index_col=0)
 
 #Generate the RFI sources or emitters:
 if((prompt('Generate RFI Sources [enter]?')=='') & runFlg):
-    rfiSrc1 = Emitter('rfiSrc1','Airplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=20*u.deg), Duration, SamplingRate,[])
-    rfiSrc2 = Emitter('rfiSrc2','Airplane',dict(height_i = 10*u.km, lat_i = -30.44*u.deg, lon_i=19.5*u.deg), Duration, SamplingRate,[])
-      
-    rfiSrcL = list([rfiSrc1,rfiSrc2])
-    print('Created RFI sources: ' + rfiSrc1.Name + '  ' + rfiSrc2.Name)
+    rfiSrcL = list([])
+    rfiSrcL.append(Emitter('rfiSrc1','Airplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=20*u.deg), Duration, SamplingRate,[]))
+    rfiSrcL.append(Emitter('rfiSrc2','Airplane',dict(height_i = 10*u.km, lat_i = -30.44*u.deg, lon_i=19.5*u.deg), Duration, SamplingRate,[]))
+
+
+    print('Created RFI sources: ')
+    for a in rfiSrcL: 
+        print(a.Name + ' - ' +  a.Emit_type)
+    
 else:
     raise SystemExit
 
 
 #Generate the antenna receivers:
 if((prompt('Generate Antenna & Receivers [enter]?')=='') & runFlg):
-    antRx1 = Receiver(skaMidAntPos.loc[tstAnt1Key].name,
+    antRxL = list()
+    antRxL.append(Receiver(skaMidAntPos.loc[tstAnt1Key].name,
                     dict(Latitude = skaMidAntPos.loc[tstAnt1Key].lat*u.deg, 
-                         Longitude = skaMidAntPos.loc[tstAnt1Key].lon*u.deg),
-                         antAzEl, Duration, SamplingRate)
-    
-    antRx2 = Receiver(skaMidAntPos.loc[tstAnt2Key].name,
+                        Longitude = skaMidAntPos.loc[tstAnt1Key].lon*u.deg),
+                        antAzEl, Duration, SamplingRate))
+                    
+    antRxL.append(Receiver(skaMidAntPos.loc[tstAnt2Key].name,
                     dict(Latitude = skaMidAntPos.loc[tstAnt2Key].lat*u.deg, 
                          Longitude = skaMidAntPos.loc[tstAnt2Key].lon*u.deg),
-                         antAzEl, Duration, SamplingRate)
-    antRxL = list([antRx1,antRx2]) # List with receiver without receiving data
-    print('Created antennas: ' + antRx1.Name + ', ' + antRx2.Name)
+                         antAzEl, Duration, SamplingRate))
+
+
+    print('Created antennas: ')
+    for a in antRxL: 
+        print(a.Name)
+                    
 else:
     raise SystemExit
  
+#Generate the sky signal sources
+if((prompt('Generate Sky sources [enter]?')=='') & runFlg):
+    skySrcL = list()
+    
+    skySrcL.append(Sky('Sky_source1', dict(lat= -31.340773 *u.deg,lon= 21.44*u.deg), SamplingRate, Duration, Temperature = 10))
+#    skySrcL = list([skySrc1])
+    print('Created sky sources: ')
+    for a in skySrcL: 
+        print(a.Name)
+    
+else:
+    raise SystemExit
+
+
 #Calculate the received RFI at the antenna aperture
 if((prompt('Compute RFI at antenna aperture [enter]?')=='') & runFlg):
     antRxL = Receive_RFI(antRxL, rfiSrcL,Duration,SamplingRate,plot_flag=0)
@@ -129,14 +152,6 @@ if((prompt('Compute RFI at antenna aperture [enter]?')=='') & runFlg):
 else:
     raise SystemExit
 
-
-#Generate the sky signal sources
-if((prompt('Generate Sky sources [enter]?')=='') & runFlg):
-    skySrc1 = Sky('Sky_source1', dict(lat= -31.340773 *u.deg,lon= 21.44*u.deg), SamplingRate, Duration, Temperature = 10)
-    skySrcL = list([skySrc1])
-    print('Created sky source: ' + skySrc1.Name)
-else:
-    raise SystemExit
 
 #Calculate the received sky signal at the antenna aperture and sum it with the RFI
 #The received signal is stored in Rx_signal, the sky signal only is stored in sky_signal_rx
@@ -152,13 +167,14 @@ else:
 #The output signal is stored in Receiver.ADC_output_rx (with RFI) or ADC_output_sky (without RFI)
 if((prompt('Apply aperture signals to rx chain model [enter]?')=='') & runFlg):
     antRxL = Apply_DISH(antRxL,Band,scaling, atten = 0) 
-    print('Taking antenna aperture singal applying to analog signal chain of :' + antRx1.Name + '  & ' + antRx2.Name)
+    print('Taking antenna aperture singal applying to analog signal chain of :')
+    for a in antRxL: 
+        print(a.Name)
 else:
     raise SystemExit
 
-#to do:
-    # Save the ADC output to files.
 
+    # Save the data to files.
 if saveFlg:
     saveAntInData(antRxL, testCaseName)
     saveAdcInData(antRxL, testCaseName)
