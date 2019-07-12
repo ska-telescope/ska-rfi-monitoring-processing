@@ -189,17 +189,18 @@ class Receiver():
         fs = self.SampleRate
         N = len(V)
         if tap == 'adcOut':
-            S = 10*np.log10(np.abs(np.fft.fft(V)))
+            S = 10*np.log10(np.abs(np.fft.fft(V)/N))
             ylabel = 'Counts [dBcounts]'
         else:    
             if mode == 'power':
-                S = 10*np.log10(np.abs(np.fft.fft(V))**2/50*1e3)
+                S = 10*np.log10(np.abs(np.fft.fft(V)/N)**2/50*1e3)
                 ylabel = 'Power [dBm]'
             else:
-                S = 10*np.log10(np.abs(np.fft.fft(V))**2)
+                S = 10*np.log10(np.abs(np.fft.fft(V)/N)**2)
                 ylabel = 'Voltage [dBV]'
 
-        freq = (np.fft.fftfreq(N, d=1/fs))
+        freq = np.fft.fftshift(np.fft.fftfreq(N, d=1/fs))
+        S = np.fft.fftshift(S) 
         
         plt.figure()
         plt.plot(freq/MHz,S)
