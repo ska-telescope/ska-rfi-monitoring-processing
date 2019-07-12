@@ -243,8 +243,10 @@ class Receiver():
         '''
             Applies the quantizer to the signal (already amplified)
         '''
-        self.ADC_output_rx = self.quantize(self.ADC_input_rx, nBits )
-        self.ADC_output_sky = self.quantize(self.ADC_input_sky, nBits)
+        _ADC_input_rx = np.copy(self.ADC_input_rx)
+        _ADC_input_sky = np.copy(self.ADC_input_rx)
+        self.ADC_output_rx = self.quantize(_ADC_input_rx, nBits )
+        self.ADC_output_sky = self.quantize(_ADC_input_sky, nBits)
         
         
     def Apply_analog_chain(self,Band,scaling,atten=0,f_offset=0):
