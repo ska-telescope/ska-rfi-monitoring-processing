@@ -22,7 +22,7 @@ k_bolt = 1.38e-23
 class Emitter():
     #Generate emitter object
     
-    def __init__(self,Name,Emit_type,Pos_ini, duration,SampleRate,position_params,random_seed=[]):
+    def __init__(self,Name,Emit_type,Pos_ini, duration,SampleRate,position_params,random_seed=[],forceSignals=0):
         #Initializaition:
         self.Duration = duration
         self.Name = Name
@@ -31,6 +31,7 @@ class Emitter():
         self.position_params = position_params 
         self.Pos_ini = Pos_ini
         self.randomSeed = random_seed
+        self.forceSignals = forceSignals
         
         if Emit_type == "Airplane":
             self.Signals = list()
@@ -38,8 +39,8 @@ class Emitter():
             ADSB_power = 53 #dBm = 250W
             np.random.seed(int(self.randomSeed*100)) #loads the seed in case of wanting to repeat the same signal.
             freqDme = (np.random.random(1)-0.5)*62.5 + 1087.5 #DME frequencies for tx airplane : 1025-1150MHz
-            self.Signals.append(Signal('DME',self.Duration,self.SampleRate,freqDme*MHz,DME_power,0,self.randomSeed))
-            self.Signals.append(Signal('ADS-B',self.Duration,self.SampleRate,1090*MHz,ADSB_power,0,self.randomSeed*5))
+            self.Signals.append(Signal('DME',self.Duration,self.SampleRate,freqDme*MHz,DME_power,0,self.randomSeed,self.forceSignals))
+            self.Signals.append(Signal('ADS-B',self.Duration,self.SampleRate,1090*MHz,ADSB_power,0,self.randomSeed*5,self.forceSignals))
         elif Emit_type == 'Sky':
             self.Signals = list()
             scale = 1 # TO-DO :  needs some scaling that makes sense 

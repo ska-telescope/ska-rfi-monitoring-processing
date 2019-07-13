@@ -59,7 +59,7 @@ RFI Test case #1:
 #file parameters
 testCaseName = 'test1'
 skaMidAntPosFileSpec = './skaMidAntPositions.csv'
-randomSeed = 55.
+randomSeed = 25.
 
 #antenna pair to test
 tstAnt1Key = 'SKA001'
@@ -99,8 +99,8 @@ skaMidAntPos = pd.read_csv(skaMidAntPosFileSpec, comment='#', index_col=0)
 #Generate the RFI sources or emitters:
 if((prompt('Generate RFI Sources [enter]?')=='') & runFlg):
     rfiSrcL = list([])
-    rfiSrcL.append(Emitter('rfiSrc1','Airplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=20*u.deg), Duration, SamplingRate,[],random_seed=randomSeed))
-    rfiSrcL.append(Emitter('rfiSrc2','Airplane',dict(height_i = 10*u.km, lat_i = -30.44*u.deg, lon_i=19.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed))
+    rfiSrcL.append(Emitter('rfiSrc1','Airplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=20*u.deg), Duration, SamplingRate,[],random_seed=randomSeed,forceSignals=1))
+    rfiSrcL.append(Emitter('rfiSrc2','Airplane',dict(height_i = 10*u.km, lat_i = -30.44*u.deg, lon_i=19.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed,forceSignals=1))
 
 
     print('Created RFI sources: ')

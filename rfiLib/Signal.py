@@ -26,7 +26,7 @@ k_bolt = 1.38e-23
 class Signal():
 
     # generate a signal object.
-    def __init__(self,Name,Duration,SamplingRate,CenterFreq,Power,Pol,random_seed=[]):
+    def __init__(self,Name,Duration,SamplingRate,CenterFreq,Power,Pol,random_seed=[],forceSignals=0):
         self.Name = Name
         self.Duration = Duration
         self.SamplingRate = SamplingRate
@@ -34,10 +34,11 @@ class Signal():
         self.Seed = random_seed #Used in the case of wanting to repeat the "random" signal (not implemented yet)
         self.Power = Power
         self.Polarization = Pol
-        
+        self.forceSignals = forceSignals
         self.time,self.data = self.Message()
         
         self.data = self.Scale_power()
+        
 
     
  # --------------------------------------        
@@ -67,10 +68,14 @@ class Signal():
         
 
         if self.Name == 'ADS-B':
-             
+            # to avoid generating a signal that will be 161ms long with a 4GHz sampling rate (644Msamples)
+            # will generate a signal that is the longitud of the duration of the test case
+            # that takes into account the posibility that an ADS-B pulse falls into the duration of the 
+            # use case wit ha random generator.
+            
             Ton = 120*us
             fc = self.CenterFreq #1090*MHz
-            period = 1*ms # periodicity of the signal
+            period = 161*ms 
             SamplingFreq = self.SamplingRate
             Trise = 0.1*us
             Tfall = 0.1*us
@@ -79,18 +84,31 @@ class Signal():
                                         ,np.ones(int(Tpulse*SamplingFreq)) \
                                         ,np.linspace(1,0,int(Tfall*SamplingFreq)) \
                                         ,np.zeros(int((1*us-Trise-Tfall-Tpulse)*SamplingFreq))))
-            N = len(pulse_env)
-            env = np.zeros(int(period*SamplingFreq))
-            for i in range(120):
-                try:
-                    np.random.seed(int(self.Seed*i))
-                except:
-                    np.random.seed()
-                pulse_shift = (np.round(np.random.random(1))).astype(int)
-                env[i*N:(i+1)*N] = np.roll(pulse_env,int(pulse_shift*period/2*SamplingFreq))
+            N = len(pulse_env) #number of samples in the envelope of one pulse
             
-            t = np.linspace(0,period,period*SamplingFreq)
-            
+            if self.Duration>period:
+                env = np.zeros(int(period*SamplingFreq)) #envelope is the same duration as the period of the signal
+                for i in range(120):
+                    try:
+                        np.random.seed(int(self.Seed*i))
+                    except:
+                        np.random.seed()
+                    pulse_shift = (np.round(np.random.random(1))).astype(int)
+                    env[i*N:(i+1)*N] = np.roll(pulse_env,int(pulse_shift*period/2*SamplingFreq))
+                
+                t = np.linspace(0,period,period*SamplingFreq)
+            else:
+                env = np.zeros(int(self.Duration*SamplingFreq)) #envelope is the same duration as the test case
+                for i in range(120):
+                    try:
+                        np.random.seed(int(self.Seed*i))
+                    except:
+                        np.random.seed()
+                    pulse_shift = (np.round(np.random.random(1))).astype(int)
+                    env[i*N:(i+1)*N] = np.roll(pulse_env,int(pulse_shift*period/2*SamplingFreq))
+                
+                t = np.linspace(0,self.Duration,self.Duration*SamplingFreq)
+                
             sine = np.sin(2*np.pi*fc*t+ini_phase)
             S = sine*env
         
@@ -127,23 +145,52 @@ class Signal():
             return t[t<=self.Duration] , S[t<=self.Duration]
             
         if self.Name == 'ADS-B':
-            SymLen = 1*ms #time duration of a symbol >120us
-            samples_sym = int(SymLen*fs) #number of samples in a symbol
-            N_Symbols = int(L/SymLen)+1 #number of symbles + 1 because of the rounding.
-            samples_tot = int(round(N_Symbols*SymLen*fs)) # total number of samples
-            np.random.seed(int(self.Seed*3)) #loads the seed in case of wanting to repeat the same signal.
-            ini_phase = np.random.rand(1)*2*np.pi #random phase for the signal generator
-            N = samples_sym
-            np.random.seed(int(self.Seed*4)) #loads the seed in case of wanting to repeat the same signal.
-            displace = int(np.random.rand(1)*(N*0.25))
-            S = np.zeros(samples_tot)
-            t = np.zeros(samples_tot)
-            for i in range(N_Symbols):
-                t_aux,S[i*samples_sym:(i+1)*samples_sym] = self.Symbol(ini_phase, displace)        
-                if i>0:
-                    t_aux += t_aux[1]
+            SymLen = 161*ms #periodicity of the signal is minimum 161ms see (https://www.itu.int/dms_pub/itu-r/opb/rep/R-REP-M.2413-2017-PDF-E.pdf)
+            pulseLen = 120*us
 
-                t[i*samples_sym:(i+1)*samples_sym] = t_aux+t_aux[-1]*i
+            samples_sym = int(SymLen*fs) #number of samples in a symbol
+            N_Symbols = int(L/SymLen) #number of symbles + 1 because of the rounding.
+            
+            if N_Symbols < 1:  #to simulate this with shorter durations a probability 
+                               #approach is taken in the signal function
+                probability = self.Duration/SymLen    
+                np.random.seed(int(self.Seed*8)) #loads the seed in case of wanting to repeat the same signal.
+                number = np.random.random(1)
+                if self.forceSignals:
+                    number = 0 # forces the signal to appear.
+                if number<probability:
+#                    generateSignal =  1
+                    
+                    samples_tot = int(L*fs) #int(round(N_Symbols*SymLen*fs)) # total number of samples
+                    np.random.seed(int(self.Seed*3)) #loads the seed in case of wanting to repeat the same signal.
+                    ini_phase = np.random.rand(1)*2*np.pi #random phase for the signal generator
+                    np.random.seed(int(self.Seed*4)) #loads the seed in case of wanting to repeat the same signal.
+                    pulseSamples = int(pulseLen*fs)
+                    displace = int(np.random.rand(1)*(samples_tot-pulseSamples))
+                    t,S = self.Symbol(ini_phase, displace)        
+                    
+                else:
+#                    generateSignal =  0
+                    t,S = self.Symbol(0, 0)
+                    S = S*0 # No detection of the ADSB signal
+                    
+                    
+            else: # if the duration is longer than a symbol
+                samples_tot = int(round(N_Symbols*SymLen*fs)) # total number of samples
+                np.random.seed(int(self.Seed*3)) #loads the seed in case of wanting to repeat the same signal.
+                ini_phase = np.random.rand(1)*2*np.pi #random phase for the signal generator
+                N = samples_sym
+                np.random.seed(int(self.Seed*4)) #loads the seed in case of wanting to repeat the same signal.
+                displace = int(np.random.rand(1)*(N*0.25))
+                S = np.zeros(samples_tot)
+                t = np.zeros(samples_tot)
+                for i in range(N_Symbols):
+                    t_aux,S[i*samples_sym:(i+1)*samples_sym] = self.Symbol(ini_phase, displace)        
+                    if i>0:
+                        t_aux += t_aux[1]
+    
+                    t[i*samples_sym:(i+1)*samples_sym] = t_aux+t_aux[-1]*i
+                
             S = self.Tx_filter(S,self.CenterFreq*0.99,self.CenterFreq*1.01)
             return t[t<=self.Duration] , S[t<=self.Duration]
 
