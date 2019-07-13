@@ -134,8 +134,9 @@ class Signal():
             t = np.zeros(samples_tot)
 
             N = samples_sym
+            N_pulse = int(15*us*fs) # aprox number of samples in both pulses
             np.random.seed(int(self.Seed*2)) #loads the seed 
-            displace = int(np.random.rand(1)*(N*0.25))
+            displace = int(np.random.rand(1)*(N-N_pulse))
             for i in range(N_Symbols):
                 t_aux,S[i*samples_sym:(i+1)*samples_sym] = self.Symbol(ini_phase, displace)        
                 if i>0:
