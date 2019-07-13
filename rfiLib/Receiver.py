@@ -234,7 +234,7 @@ class Receiver():
         """
         if scaling == 'Correlator_opimized':
             Vrms = np.sqrt(np.sum(s**2)/len(s))
-            PdBm = 10*np.log10(Vrms**2/50)
+            PdBm = 10*np.log10(Vrms**2/50*1e3)
             Gain = adcGain(PdBm,nBits,Vfs) #dB gain to scale the input voltage.
             
             
