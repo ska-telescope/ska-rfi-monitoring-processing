@@ -57,9 +57,9 @@ RFI Test case #1:
 '''
 
 #file parameters
-testCaseName = 'test1'
+testCaseName = 'test2'
 skaMidAntPosFileSpec = './skaMidAntPositions.csv'
-randomSeed = 25.
+randomSeed = 22.
 
 #antenna pair to test
 tstAnt1Key = 'SKA001'
@@ -70,7 +70,7 @@ antAzEl = dict(Elev=90*u.deg,Azimuth=0*u.deg)
 
 #Receiver and temporal parameters
 Band = 'B2'
-Duration = 2.*ms
+Duration = 4.*ms
 SamplingRate = 4*GHz # THis is the analog sampling rate
 
 #ADC scaling
@@ -81,8 +81,8 @@ promptFlg = False #interactive mode prompts user at various processing steps
 runFlg = True #can be used to skip over processing
 saveFlg = True #results are saved if true
 loadFlg = False #results are loaded if true
-plot_signal = True #plot time series signal
-plot_spectrum = True #plot spectrum
+plot_signal = False #plot time series signal
+plot_spectrum = False #plot spectrum
 plot_corr = False   #plot correlation
           
 
@@ -99,8 +99,13 @@ skaMidAntPos = pd.read_csv(skaMidAntPosFileSpec, comment='#', index_col=0)
 #Generate the RFI sources or emitters:
 if((prompt('Generate RFI Sources [enter]?')=='') & runFlg):
     rfiSrcL = list([])
-    rfiSrcL.append(Emitter('rfiSrc1','Airplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=20*u.deg), Duration, SamplingRate,[],random_seed=randomSeed,forceSignals=1))
-    rfiSrcL.append(Emitter('rfiSrc2','Airplane',dict(height_i = 10*u.km, lat_i = -30.44*u.deg, lon_i=19.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*2,forceSignals=1))
+    rfiSrcL.append(Emitter('rfiSrc1','Airplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=20*u.deg), Duration, SamplingRate,[],random_seed=randomSeed,forceSignals=0))
+    rfiSrcL.append(Emitter('rfiSrc2','Airplane',dict(height_i = 10*u.km, lat_i = -30.44*u.deg, lon_i=19.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*2,forceSignals=0))
+    rfiSrcL.append(Emitter('rfiSrc3','Airplane',dict(height_i = 10*u.km, lat_i = -31.7*u.deg, lon_i=20.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*3,forceSignals=1))
+    rfiSrcL.append(Emitter('rfiSrc4','Airplane',dict(height_i = 10*u.km, lat_i = -31*u.deg, lon_i=21*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*4,forceSignals=0))
+    rfiSrcL.append(Emitter('rfiSrc5','Airplane',dict(height_i = 10*u.km, lat_i = -30.7*u.deg, lon_i=21.3*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*5,forceSignals=0))
+    rfiSrcL.append(Emitter('rfiSrc6','Airplane',dict(height_i = 10*u.km, lat_i = -30.4*u.deg, lon_i=21.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*6,forceSignals=0))
+    rfiSrcL.append(Emitter('rfiSrc7','Airplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=21.8*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*7,forceSignals=0))
 
 
     print('Created RFI sources: ')
