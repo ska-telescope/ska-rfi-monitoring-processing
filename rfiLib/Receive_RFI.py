@@ -3,6 +3,7 @@
 Created on Thu Jun 20 23:51:32 2019
 
 @author: f.divruno
+@revised: G.Hovey, 13 July 2019; changed exit to raise exception with more meanful message
 """
 import numpy as np
 
@@ -45,8 +46,10 @@ def Receive_RFI(Telescope_list, Emitter_list,Duration,SamplingRate,plot_flag=0):
                 if delay_samples > max_delay_samples:
                     max_delay_samples = delay_samples
                     if max_delay_samples/SamplingRate > Duration:
-                        print('Delay is %0.2f us, greater han UC duration' % (max_delay_samples/SamplingRate/us))
-                        exit(3)
+                        raise Exception('RFI Source ' + Emitter_list[j].Signals[k].Name + \
+                              ' Delay is %0.2f us, greater than test case duration' % (max_delay_samples/SamplingRate/us))
+                        
+
                         
                 FSPL_times = 10**(-FSPL/20)
                 
