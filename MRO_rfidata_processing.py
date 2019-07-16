@@ -215,11 +215,12 @@ while selection != '0':
     if selection == '7': #reverse Cumulative distrib
         print('Calculating reverse cumulative distrib...')
         P_integ = 10*np.log10(np.sum(10**(D/10),1))
-        P_ave = np.average(P_integ)
-        P_2 = P_integ[P_integ > (P_ave+3)]
+#        P_ave = np.average(P_integ)
+#        P_2 = P_integ[P_integ > (P_ave+3)]
+        P_2 = P_integ
         fig, ax = plt.subplots(figsize=(8, 4))
         n, bins, patches = ax.hist(P_2, 100, density=True, histtype='step',
-                                   cumulative=-1)
+                                   cumulative=-1, log=True)
         plt.ylabel('Probability')
         plt.xlabel('Power [dBm]')
         plt.grid()
