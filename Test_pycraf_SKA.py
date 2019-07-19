@@ -21,14 +21,20 @@ pathprof.SrtmConf.set(download='missing', server='viewpano')
 ===========================================
 '''
 
-telescope = 'MID'
-if telescope=='LOW':
+
+selection = input('Select telescope:\n1:MID\n2:LOW\nselection:')
+
+if selection==2:
+    telescope ='LOW'
     skaAntPosCsvFile = r'C:\Users\F.Divruno\Dropbox (SKA)\Python_codes\SKA1_Low_coordinates.csv'    
     culpritsCsvFile = r'C:\Users\F.Divruno\Dropbox (SKA)\Python_codes\SKA1_Low_EMC_analysis_locations.csv'
-else:
+elif selection==1:
+    telescope ='MID'
     skaAntPosCsvFile = r'C:\Users\F.Divruno\Dropbox (SKA)\Python_codes\SKA1_Mid_coordinates.csv'    
     culpritsCsvFile = r'C:\Users\F.Divruno\Dropbox (SKA)\Python_codes\SKA1_Mid_EMC_analysis_locations.csv'
-
+else:
+    print('error, exiting')
+    exit
 
 aux = pd.read_csv(culpritsCsvFile,comment='#')
 print('\n\n\n\n')
