@@ -21,8 +21,15 @@ pathprof.SrtmConf.set(download='missing', server='viewpano')
 ===========================================
 '''
 
+telescope = 'MID'
+if telescope=='LOW':
+    skaAntPosCsvFile = r'C:\Users\F.Divruno\Dropbox (SKA)\Python_codes\SKA1_Low_coordinates.csv'    
+    culpritsCsvFile = r'C:\Users\F.Divruno\Dropbox (SKA)\Python_codes\SKA1_Low_EMC_analysis_locations.csv'
+else:
+    skaAntPosCsvFile = r'C:\Users\F.Divruno\Dropbox (SKA)\Python_codes\SKA1_Mid_coordinates.csv'    
+    culpritsCsvFile = r'C:\Users\F.Divruno\Dropbox (SKA)\Python_codes\SKA1_Mid_EMC_analysis_locations.csv'
 
-culpritsCsvFile = r'C:\Users\F.Divruno\Dropbox (SKA)\Python_codes\SKA1_Mid_EMC_analysis_locations.csv'
+
 aux = pd.read_csv(culpritsCsvFile,comment='#')
 print('\n\n\n\n')
 print(aux.location)
@@ -63,7 +70,7 @@ lat_tx = aux.lat[loc_num]*u.deg
 
 map_size_lon, map_size_lat = .5 * u.deg, .5 * u.deg
 map_resolution = 0.001* u.deg
-hprof_step = 100 * u.m
+hprof_step = 10* u.m
 
 # get the data for the map
 lons, lats, heightmap = pathprof.srtm_height_map(
@@ -86,8 +93,8 @@ sites = OrderedDict([
     # ID: tuple(Name, (lon, lat), Type, height, diameter, (xoff, yoff), color)
     #('Tx', Site('Tx', (u.Quantity(lon_tx).value, u.Quantity(lat_tx).value), (20, +30), 'k')),
     #('Low_E4', Site('Low_E4', (116.75, -26.835), (60, -20), 'k')),
-    ('Mid_114', Site('Mid_114', (21.452432,-30.739759), (30, -40), 'k')),
-    ('Mid_121', Site('Mid_121', (21.406843,-30.803121), (-50, +20), 'k')),
+  #  ('Mid_114', Site('Mid_114', (21.452432,-30.739759), (30, -40), 'k')),
+   # ('Mid_121', Site('Mid_121', (21.406843,-30.803121), (-50, +20), 'k')),
 #    ('Mid_124', Site('Mid_124', (21.804492, -30.84449), (-35, +25), 'k')),
 #    ('Mid_020', Site('Mid_020', (21.4473, 	-30.6631), (-35, +25), 'k')),
 #    ('Mid_120', Site('Mid_120', (21.6973, 	-30.8837), (-35, +25), 'k')),
@@ -104,17 +111,24 @@ sites = OrderedDict([
 ===========================================
 '''
 
-Antenna_locations = xlrd.open_workbook(r'C:\Users\F.Divruno\Dropbox (SKA)\Python_codes\SKA1_Mid_coordinates.xlsx')
+#Antenna_locations = xlrd.open_workbook(r'C:\Users\F.Divruno\Dropbox (SKA)\Python_codes\SKA1_Mid_coordinates.xlsx')
+#
+#sheet_indx = 0
+#sheet = Antenna_locations.sheet_by_index(sheet_indx)
+#name_x = list()
+#lat_x = np.zeros(sheet.nrows-2)
+#long_x = np.zeros(sheet.nrows-2)
+#for i in range(2,sheet.nrows-1):
+#        name_x.append(sheet.cell_value(i,0))
+#        long_x[i-2] = sheet.cell_value(i,1)
+#        lat_x[i-2] = sheet.cell_value(i,2)
 
-sheet_indx = 0
-sheet = Antenna_locations.sheet_by_index(sheet_indx)
-name_x = list()
-lat_x = np.zeros(sheet.nrows-2)
-long_x = np.zeros(sheet.nrows-2)
-for i in range(2,sheet.nrows-1):
-        name_x.append(sheet.cell_value(i,0))
-        long_x[i-2] = sheet.cell_value(i,1)
-        lat_x[i-2] = sheet.cell_value(i,2)
+
+skaAntPos = pd.read_csv(skaAntPosCsvFile,comment='#')
+N_ants = len(skaAntPos['lon'])
+lat_x = np.array(skaAntPos.lat)
+long_x = np.array(skaAntPos.lon)
+name_x = list(skaAntPos.name)
         
 #%%
 '''
@@ -180,8 +194,8 @@ for i in range(len(long_x)):
 '''
 # Here input the patameters for the ITU-R 452-16 model
 
-freq_string = input('\nSpecify the frequency range (in GHz): ')
-freq = int(freq_string) * u.GHz
+freq_string = (input('\nSpecify the frequency range (in GHz): '))
+freq = float(freq_string) * u.GHz
 omega = 0. * u.percent  # fraction of path over sea
 temperature = 290. * u.K
 pressure = 1013. * u.hPa
