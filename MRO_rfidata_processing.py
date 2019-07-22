@@ -85,7 +85,14 @@ t_step = 1200/680
 tmax = (len(data)-1)*t_step
 time1 = np.linspace(0,tmax,len(data))
     
-selection = input('\n\nSelect action:\n1: change frequency and time range\n2: Histogram\n3: Integrated Power\n4: Average\n5: Percentiles\n6: Occupancy\n0: exit\n\nSelect: ')
+selection = input('\n\nSelect action:\
+                    \n1: change frequency and time range\
+                    \n2: Histogram\n3: Integrated Power\
+                    \n4: Average\n5: Percentiles\
+                    \n6: Occupancy\
+                    \n7: Cumulative distribution function\
+                    \n0: exit\
+                    \n\nSelect: ')
 init = 1    
 while selection != '0':
     if init: 
@@ -204,6 +211,23 @@ while selection != '0':
             BW_loss = np.sum(((S_occupancy>j)))/len(S_occupancy)*100
             print('%0.3f%% of the BW is lost %d%% of the time' % (BW_loss,j))
         
+        
+    if selection == '7': #reverse Cumulative distrib
+        print('Calculating reverse cumulative distrib...')
+        P_integ = 10*np.log10(np.sum(10**(D/10),1))
+#        P_ave = np.average(P_integ)
+#        P_2 = P_integ[P_integ > (P_ave+3)]
+        P_2 = P_integ
+        fig, ax = plt.subplots(figsize=(8, 4))
+        n, bins, patches = ax.hist(P_2, 100, density=True, histtype='step',
+                                   cumulative=-1, log=True)
+        plt.ylabel('Probability')
+        plt.xlabel('Power [dBm]')
+        plt.grid()
+        title = 'Cumulative distribution function_'+ time_freq
+        plt.title(title)
+        
+        plt.savefig(outdir+ title, dpi=600, bbox_inches='tight')
         
 #    os.system('clear')        
     selection = input('\n\nSelect action:\n1: change frequency range\n2: Histogram\n3: Integrated Power\n4: Average\n5: Percentiles\n6: Occupancy\n0: exit\n\nSelect: ')

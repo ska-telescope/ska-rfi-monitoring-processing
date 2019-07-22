@@ -271,7 +271,7 @@ directory = "C:\\Users\\f.divruno\\Dropbox (SKA)\\14- RFI environment\\01- Austr
 read_data_from_files = 0
 if  read_data_from_files ==1:
     time,td_data = RFI.read_phase0_data(directory,files_num='all')
-    [freq,Ant1_pow] = RFI.fft_calc(td_data,fs=800e6, 0, 0)
+    [freq,Ant1_pow] = RFI.fft_calc(td_data,800e6, 0, 0)
     #del time_data
     np.savez_compressed(directory + '\\'+'Phase0_SKALA4_full_day', freq=freq, SKALA4_pow=Ant1_pow,time=time, td_data=td_data)
 else:
@@ -319,9 +319,9 @@ plt.plot(freq,10*np.log10(P_orig),'r',freq,10*np.log10(P_filt),'b')
 f= SKALA4_freq
 data= SKALA4_pow
 title= 'Max values - Phase0 - SKALA4.0 - 20190331'
-RFI.plot_percentile(f,data,100,title='Maximum values - '+title)
+RFI.plot_percentile(f,data,100,directory,title='Maximum values - '+title)
 
-
+#(freq,data,percentile,outdir,dataunits='dBm',title=''):
 #%% percentiles
 perc = 100
 f= SKALA4_freq
@@ -331,7 +331,7 @@ RFI.plot_percentile(f,data,perc,title)
 
 #%% Spectrogram
 Fstart = 0
-Fstop = 30
+Fstop = 400
 time = SKALA4_time
 f= SKALA4_freq
 data= SKALA4_pow
