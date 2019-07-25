@@ -11,8 +11,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #%% 
-puntos = 100000
-T1 = 160e-6 # RFI capture window
+puntos = 2000
+#T1 = 160e-6 # RFI capture window
+#T2 = 10 # RFI capture period
+
+T1 = 100e-3 # RFI capture window
 T2 = 1 # RFI capture period
 
 
