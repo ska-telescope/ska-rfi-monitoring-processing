@@ -275,7 +275,7 @@ class Receiver():
             Applies the quantizer to the signal (already amplified)
         '''
         _ADC_input_rx = np.copy(self.ADC_input_rx)
-        _ADC_input_sky = np.copy(self.ADC_input_rx)
+        _ADC_input_sky = np.copy(self.ADC_input_sky)
         self.ADC_output_rx = self.quantize(_ADC_input_rx, nBits )
         self.ADC_output_sky = self.quantize(_ADC_input_sky, nBits)
         
@@ -284,10 +284,10 @@ class Receiver():
         '''
             Applies the zero order model of the analog chain of DISH
         '''
-        s_sky = self.sky_source_rx #signal with only sky source
-        s_rx = self.Rx_signal # signal ith sky source and RFI
-        t_s = self.time
-        f_s = self.SampleRate
+        s_sky = np.copy(self.sky_source_rx) #signal with only sky source
+        s_rx = np.copy(self.Rx_signal) # signal ith sky source and RFI
+        t_s = np.copy(self.time)
+        f_s = np.copy(self.SampleRate)
         
         if Band == 'B1':
             print('Applying Band 1')
@@ -346,6 +346,7 @@ class Receiver():
             s *= 10**((56+32+self.Atten)/20.)
             s_sky = s
                        
+            
             s = s_rx
             # Approx. T_ant = sky + atmosphere + spillover ZA=0 (8.2@950MHz, 5.8@1760MHz) [SKA-TEL-DSH-0000111, rev 1, fig 37]
             s = s + WhiteNoiseSignal(t_s, Teq=7)
