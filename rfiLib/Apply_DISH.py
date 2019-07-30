@@ -39,7 +39,7 @@ def Apply_DISH(Telescope_list,Band='B1',scaling = 'Correlator_opimized', atten =
         # The output signal is stored in Receiver.ADC_output    
         
         #TO-DO: frequency offset scheme.
-#        Telescope_list[i].Apply_freq_offset()
+        Telescope_list[i].Apply_antSampleRate()
         
     
     return Telescope_list

@@ -29,7 +29,7 @@ class Receiver():
                  Position=dict(Latitude = -30.71329*u.deg, \
                                Longitude = 21.449412*u.deg),\
                                Pointing=dict(Elev=90*u.deg,Azimuth=0*u.deg),\
-                               duration=.5*ms,SampleRate=4.*GHz,freqOffset=0,\
+                               duration=.5*ms,SampleRate=4.*GHz,antSampleRate=3.96*GHz,\
                                band = 'B2'):
         self.band = band
         self.height = 0
@@ -43,7 +43,7 @@ class Receiver():
         self.Pos = [Posx,Posy,Posz]
         self.Pointing = Pointing
         self.SampleRate = SampleRate
-        self.freqOffset = freqOffset
+        self.antSampleRate = antSampleRate
         self.Duration = duration
         self.sky_source_rx = []
         self.Rx_signal = []
@@ -217,7 +217,7 @@ class Receiver():
         
     
 
-    def Apply_freq_offset(self): 
+    def Apply_antSampleRate(self): 
         """
             Re-sampling by linear interpolation (only down-sampling). Both time and amplitudes are re-sampled
             without scale change, so ENERGY IS CONSERVED but POWER IS NOT.
@@ -227,10 +227,8 @@ class Receiver():
              by Adriaan Peens-Hugh
              modified by FDV 30/07/19 
         """
-        f_s = self.SampleRate
-        f_s_new = self.SampleRate + self.freqOffset
         
-        assert (f_s >= f_s_new), "sample() does not support up-sampling!"
+        f_s_new = self.antSampleRate
         
         t_new = np.linspace(1/f_s_new, self.time[-1],self.time[-1]*f_s_new )
 
