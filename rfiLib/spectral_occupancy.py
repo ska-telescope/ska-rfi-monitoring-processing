@@ -11,13 +11,23 @@ import warnings
 warnings.simplefilter('ignore', np.RankWarning)
 
 def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
+    '''
+        freqs: freq vector
+        D: data vector: power in time and freq
+        outdir: dir to save files
+        std_multiplier: multiplier to set the threshold.
+        Returns:
+            err: RFI data without the baseline
+            occup_thresh: vector with occupancy per channel.
+            
+    '''
     f_step = freqs[1]-freqs[0]
     BW = freqs[-1]-freqs[0]
     N = len(freqs)
     
-    #find parts of the spectrum with significant power
+    #find parts of the spectrum with significant power to remove from the baseline calculation
     Ave = np.average(10**(D/10),0)
-    channel = 0.5 #in MHz channel
+    channel = 15 #in MHz channel
     points_in_channel = int(channel/f_step)
     channels_in_BW = int(N/points_in_channel)
     Pow_in_ch = np.zeros(channels_in_BW)
@@ -27,7 +37,6 @@ def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
         freq_in_ch[i] = freqs[i*points_in_channel]
     dif = Pow_in_ch[1::]-Pow_in_ch[0:-1:1]
     dif = np.append(dif,0)
-#    dif = np.append(dif,0)
     f_RFI_start = [] #np.ndarray([])
     f_RFI_stop = [] #np.ndarray([])
     rfi_flag = 0
@@ -63,7 +72,7 @@ def spectral_occupancy(freqs,D,outdir,title,std_multiplier):
         blfit = 3
         A = amps[j]
         A_aux = np.array(A)
-        for i in range(len(f_RFI_start)): #gets rid of the RFI present all the time for doing the fit.
+        for i in range(len(f_RFI_start)): #gets rid of the RFI present all the time for the fit.
 #            A_aux[(freqs>=f_RFI_start[i])&(freqs<=f_RFI_stop[i])] = np.ones(sum((freqs>=f_RFI_start[i])&(freqs<=f_RFI_stop[i])))*(A[(freqs>=f_RFI_start[i])][0]+A[(freqs<=f_RFI_stop[i])][-1])/2 
             A_aux[ind_start[i]:ind_stop[i]] = np.ones(ind_stop[i]-ind_start[i])*(A[ind_start[i]]+A[ind_stop[i]])/2 
             
