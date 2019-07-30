@@ -65,7 +65,7 @@ antAzEl = dict(Elev=90*u.deg,Azimuth=0*u.deg)
 #Receiver and temporal parameters
 Band = 'B2'
 Duration = 2.*ms
-SamplingRate = 4*GHz # THis is the analog sampling rate
+SamplingRate = 5*GHz # THis is the analog sampling rate
 
 #ADC scaling
 scaling = 'Correlator_opimized'
@@ -94,12 +94,12 @@ skaMidAntPos = pd.read_csv(skaMidAntPosFileSpec, comment='#', index_col=0)
 if((prompt('Generate RFI Sources [enter]?')=='') & runFlg):
     rfiSrcL = list([])
     rfiSrcL.append(Emitter('rfiSrc1','Airplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=20*u.deg), Duration+maxDelay.value, SamplingRate,[],random_seed=randomSeed,forceSignals=0))
-    rfiSrcL.append(Emitter('rfiSrc2','Airplane',dict(height_i = 10*u.km, lat_i = -30.44*u.deg, lon_i=19.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*2,forceSignals=0))
-    rfiSrcL.append(Emitter('rfiSrc3','Airplane',dict(height_i = 10*u.km, lat_i = -31.7*u.deg, lon_i=20.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*3,forceSignals=1))
-    rfiSrcL.append(Emitter('rfiSrc4','Airplane',dict(height_i = 10*u.km, lat_i = -31*u.deg, lon_i=21*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*4,forceSignals=0))
-    rfiSrcL.append(Emitter('rfiSrc5','Airplane',dict(height_i = 10*u.km, lat_i = -30.7*u.deg, lon_i=21.3*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*5,forceSignals=0))
-    rfiSrcL.append(Emitter('rfiSrc6','Airplane',dict(height_i = 10*u.km, lat_i = -30.4*u.deg, lon_i=21.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*6,forceSignals=1))
-    rfiSrcL.append(Emitter('rfiSrc7','Airplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=21.8*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*7,forceSignals=0))
+#    rfiSrcL.append(Emitter('rfiSrc2','Airplane',dict(height_i = 10*u.km, lat_i = -30.44*u.deg, lon_i=19.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*2,forceSignals=0))
+#    rfiSrcL.append(Emitter('rfiSrc3','Airplane',dict(height_i = 10*u.km, lat_i = -31.7*u.deg, lon_i=20.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*3,forceSignals=1))
+#    rfiSrcL.append(Emitter('rfiSrc4','Airplane',dict(height_i = 10*u.km, lat_i = -31*u.deg, lon_i=21*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*4,forceSignals=0))
+#    rfiSrcL.append(Emitter('rfiSrc5','Airplane',dict(height_i = 10*u.km, lat_i = -30.7*u.deg, lon_i=21.3*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*5,forceSignals=0))
+#    rfiSrcL.append(Emitter('rfiSrc6','Airplane',dict(height_i = 10*u.km, lat_i = -30.4*u.deg, lon_i=21.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*6,forceSignals=1))
+#    rfiSrcL.append(Emitter('rfiSrc7','Airplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=21.8*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*7,forceSignals=0))
 
 
     print('Created RFI sources: ')
@@ -116,13 +116,15 @@ if((prompt('Generate Antenna & Receivers [enter]?')=='') & runFlg):
     antRxL.append(Receiver(skaMidAntPos.loc[tstAnt1Key].name,
                     dict(Latitude = skaMidAntPos.loc[tstAnt1Key].lat*u.deg, 
                         Longitude = skaMidAntPos.loc[tstAnt1Key].lon*u.deg),
-                        antAzEl, Duration, SamplingRate,freqOffset=-1e3,
+                        antAzEl, Duration, SamplingRate,
+                        antSampleRate=3.96e9+1.8e3*222,
                         band = 'B2'))
                     
     antRxL.append(Receiver(skaMidAntPos.loc[tstAnt2Key].name,
                     dict(Latitude = skaMidAntPos.loc[tstAnt2Key].lat*u.deg, 
                          Longitude = skaMidAntPos.loc[tstAnt2Key].lon*u.deg),
-                         antAzEl, Duration, SamplingRate,freqOffset=-0.5e3,
+                         antAzEl, Duration, SamplingRate,
+                         antSampleRate=3.96e9+1.8e3*22,
                          band = 'B2'))
 
 
@@ -180,8 +182,8 @@ else:
 
     # Save the data to files.
 if saveFlg:
-    saveAntInData(antRxL, testCaseName)
-    saveAdcInData(antRxL, testCaseName)
+#    saveAntInData(antRxL, testCaseName)
+#    saveAdcInData(antRxL, testCaseName)
     saveAdcOutData(antRxL, testCaseName)
     
 
