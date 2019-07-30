@@ -15,16 +15,18 @@ def plot_percentile(freq,data,percentile,outdir='',dataunits='dBm',title='',fig=
     data_sorted = np.sort(data,0)
     index = int((len(data)-1)*percentile/100)
     data_perc = data_sorted[index] 
-    try:
-        plt.figure(fig)
-    except:
-        plt.figure(figsize=(30,20))    
-    if dataunits == 'dBm':
-        plt.plot(freq,(data_perc), linewidth=2)
+    if len(fig)==0:
+        plt.figure('fig0',figsize=(30,20))    
+        plt.title(str(percentile) + ' percentile - ' + title)
     else:
-        plt.plot(freq,10*np.log10(data_perc), linewidth=2)
+        plt.figure(fig)    #selects the passed figure as the current figure
+        
+    if dataunits == 'dBm':
+        plt.plot(freq,(data_perc), linewidth=2,label=str(percentile) + ' %tile')
+    else:
+        plt.plot(freq,10*np.log10(data_perc), linewidth=2,label=str(percentile) + ' %tile')
     plt.grid(True,'both')
-    plt.title(str(percentile) + ' percentile - ' + title)
+
     if outdir!='':
         plt.savefig(outdir + str(percentile) + ' percentile - ' + title, dpi=600, bbox_inches='tight')
     return data_perc
