@@ -180,7 +180,7 @@ while selection != '0':
     if selection == '4': #Average
         print('Calculating Average')
         ave = np.average(D,0)            
-        plt.figure(figsize=(30,20),dpi=600)
+        plt.figure(figsize=(15,10),dpi=600)
         plt.plot(freqs,ave, linewidth=2)
         plt.ylabel('Ampl [dBm]')
         plt.xlabel('freq [MHz]')
