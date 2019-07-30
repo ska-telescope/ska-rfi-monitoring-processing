@@ -52,12 +52,12 @@ RFI Test case #1:
 #file parameters
 testCaseName = 'test2'
 skaMidAntPosFileSpec = './skaMidAntPositions.csv'
-randomSeed = 22.
+randomSeed = int(22)
 maxDelay = 1e-3 *u.s#
 
 #antenna pair to test
-tstAnt1Key = 'SKA001'
-tstAnt2Key = 'SKA005'
+tstAnt1Key = 'SKA008'
+tstAnt2Key = 'SKA133'
 
 #antenna pointing az and el
 antAzEl = dict(Elev=90*u.deg,Azimuth=0*u.deg)
@@ -76,7 +76,7 @@ runFlg = True #can be used to skip over processing
 saveFlg = False #results are saved if true
 loadFlg = False #results are loaded if true
 plot_signal = True #plot time series signal
-plot_spectrum = False #plot spectrum
+plot_spectrum = True #plot spectrum
 plot_corr = True   #plot correlation
           
 
@@ -135,7 +135,8 @@ else:
 if((prompt('Generate Sky sources [enter]?')=='') & runFlg):
     skySrcL = list()
     
-    skySrcL.append(Sky('Sky_source1', dict(elev=90 *u.deg,az= 0*u.deg),antRxL[0].Pos, SamplingRate, Duration+maxDelay.value, Temperature = 10))
+    skySrcL.append(Sky('Sky_source1', dict(elev=70 *u.deg,az= 0*u.deg),antRxL[0].Pos, SamplingRate, Duration+maxDelay.value, Temperature = 20, random_seed=int(randomSeed*10)))
+#    skySrcL.append(Sky('Sky_source2', dict(elev=60 *u.deg,az= 0*u.deg),antRxL[0].Pos, SamplingRate, Duration+maxDelay.value, Temperature = 10, random_seed=int(randomSeed*20) ))
 #    skySrcL = list([skySrc1])
     print('Created sky sources: ')
     for a in skySrcL: 
@@ -194,7 +195,7 @@ if plot_signal:
         antRx.plot_signal('antIn','RFI','volt') #mode= absVolt, volt, powerLin, powerLog
         antRx.plot_signal('adcIn','RFI','volt')
         antRx.plot_signal('adcOut','RFI','volt') 
-        antRx.plot_signal('adcOut','sky','volt') 
+#        antRx.plot_signal('adcOut','sky','volt') 
 
 
 if plot_spectrum:
@@ -210,7 +211,8 @@ if plot_spectrum:
 TO-DO: 
    Calculate the SNR at the input and different taps of the SC model
    Calculate the SNR degradation (with and without RFI)
-
+   Rudimental flagging alghorithm in time domain
+   
 '''   
 
 #%% Calculate Correlation
@@ -220,11 +222,19 @@ if plot_corr:
     Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].ADC_output_rx)*np.conjugate(np.fft.fft(antRxL[1].ADC_output_rx))))
     plt.figure()
     plt.plot(Corr)
-    plt.title('Correlation of RFI + signal')
- 
+    plt.title('Correlation of RFI + signal, antennas: %s - %s'%(antRxL[0].Name,antRxL[1].Name))
+  
 #    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].sky_source_rx)*np.conjugate(np.fft.fft(antRxL[1].sky_source_rx))))
     Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].ADC_output_sky)*np.conjugate(np.fft.fft(antRxL[1].ADC_output_sky))))
     plt.figure()
     plt.plot(Corr)
-    plt.title('Correlation of intended signal')
+    plt.title('Correlation of intended signal output ADC, antennas: %s - %s'%(antRxL[0].Name,antRxL[1].Name))
+
+#    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].sky_source_rx)*np.conjugate(np.fft.fft(antRxL[1].sky_source_rx))))
+#    plt.figure()
+#    plt.plot(Corr)
+#    plt.title('Correlation of intended signal input ADC')
+#
+
+
 

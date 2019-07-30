@@ -7,7 +7,7 @@ Created on Thu Jun 20 23:52:03 2019
 
 import rfiLib.General as General
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 '''----------------------------------
 
@@ -22,6 +22,7 @@ def Receive_Sky(Telescope_list, Sky_source_list, SamplingRate, Duration,plot_fla
     delaySamples = np.zeros([len(Telescope_list),len(Sky_source_list)])
     for i in range(len(Telescope_list)):
         print('\n\nTelescope: ' + Telescope_list[i].Name)
+        Telescope_list[i].sky_source_rx = np.zeros(total_samples)
         
         for j in range(len(Sky_source_list)):
             print('\nSource: ' + Sky_source_list[j].Name)
@@ -36,19 +37,24 @@ def Receive_Sky(Telescope_list, Sky_source_list, SamplingRate, Duration,plot_fla
         # if there is a receiver with 0 delay, it must be delayed with max_delay, the receiver with the largest delay
         # gets the zero delay to be able to chop different parts of the same emitter
         delayEmitter -= delayEmitter.max()
+#        delayEmitter -= delayEmitter # for Debug, no delay
         for i in range(len(Telescope_list)):
             #Attenuate: Antenna gain is not included at the moment
             Sig_aux = Sky_source_list[j].data
 
             Sig_aux = np.roll(Sig_aux,int(delayEmitter[i])) # the delay makes the signal arrive earlier to the receiver                
             Telescope_list[i].Rx_signal += Sig_aux[0:total_samples]    
-            Telescope_list[i].sky_source_rx = Sig_aux[0:total_samples] # here is only the sky source        
+            Telescope_list[i].sky_source_rx += Sig_aux[0:total_samples] # here is only the sky source        
             
 
     if plot_flag:
-        Telescope_list[0].plot_signal('abs','Sky')
-        Telescope_list[0].plot_signal('abslog','Sky')
-        Telescope_list[0].plot_spectrum('abs','Sky')
+        
+        Corr = abs(np.fft.ifft(np.fft.fft(Telescope_list[0].sky_source_rx)*np.conjugate(np.fft.fft(Telescope_list[1].sky_source_rx))))
+        plt.figure()
+        plt.plot(Corr)
+#        Telescope_list[0].plot_signal('abs','Sky')
+#        Telescope_list[0].plot_signal('abslog','Sky')
+#        Telescope_list[0].plot_spectrum('abs','Sky')
     
     return Telescope_list
 

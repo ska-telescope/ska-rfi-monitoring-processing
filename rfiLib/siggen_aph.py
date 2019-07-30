@@ -29,7 +29,7 @@ except:
 
 kB = 1.38e-23 # Boltzmann's constant
 MHz = 1e6 # Convenient constants
-Z0 = 1 # Reference impedance used to relate amplitude to power
+Z0 = 50 # Reference impedance used to relate amplitude to power
 
 
 def signal_power(signal):
@@ -91,7 +91,7 @@ def band_limit(signal, samplerate, f_pass, f_stop, pass_dB, stop_dB, ftype="cheb
     return y
 
 
-def WhiteNoiseSignal(t_sample, dBm_Hz=None, Teq=None):
+def WhiteNoiseSignal(t_sample, dBm_Hz=None, Teq=None, rand_seed=None):
     """
         @param t_sample: time series for which to generate the signal [sec].
         @param dBm_Hz: power spectral density [dBm/Hz].
@@ -100,6 +100,7 @@ def WhiteNoiseSignal(t_sample, dBm_Hz=None, Teq=None):
     """
     samplerate = 1/np.diff(t_sample).mean()
     psd = (10**(dBm_Hz/10.) * 1e-3) if (dBm_Hz is not None) else (kB*Teq) 
+    if (rand_seed is not None): np.random.seed(rand_seed) 
     return scale_signal(np.random.randn(len(t_sample)), psd*samplerate/2.)
 
 

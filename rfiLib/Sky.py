@@ -12,7 +12,8 @@ import rfiLib.General as General
 
 import pyproj as pyproj
 import astropy.units as u
-from rfiLib.Pointing_DISH import (ENU_to_ECEF, Pointing_to_ENU, Pointing_to_ECEF)
+from rfiLib.Pointing_DISH import  Pointing_to_ECEF
+from rfiLib.siggen_aph import WhiteNoiseSignal
 
 ecef = pyproj.Proj(proj='geocent', ellps='WGS84', datum='WGS84')
 lla = pyproj.Proj(proj='latlong', ellps='WGS84', datum='WGS84')
@@ -36,7 +37,7 @@ class Sky():
     """
     A class to define sky sources.
     """
-    def __init__(self,Name,srcPointing,posRx, SamplingRate,Duration,Temperature,random_seed = []):
+    def __init__(self,Name,srcPointing,posRx, SamplingRate,Duration,Temperature,random_seed = None):
         """            
             srcPointing: dict(elev=...*u.deg,az=...*u.deg) 
             SamplingRate:
@@ -49,7 +50,7 @@ class Sky():
         self.SamplingRate = SamplingRate
         self.Temp = Temperature
         self.random_seed = random_seed
-        self.BW = SamplingRate
+        self.BW = SamplingRate/2
         self.Power = k_bolt*Temperature*self.BW
         self.Ampl = np.sqrt(self.Power/50)
         self.Name = Name
@@ -65,7 +66,6 @@ class Sky():
 #        self.Pos = Coord.EarthLocation.from_geodetic(srcPosition['lon'],srcPosition['lat'])
         
         self.time, self.data = self.sky_signal()
-        self.data = self.data*self.Ampl
  
         
         
@@ -80,15 +80,14 @@ class Sky():
         
         #number of samples
         N = int(t_max*self.SamplingRate)
-        time = np.linspace(0,t_max,N)
+        time = np.linspace(1/self.SamplingRate,t_max,N)
         #generate the random signal
-        try:
-            np.random.seed(self.random_seed)
-            sky = np.random.randn(N)*self.Ampl
-        except:
-            np.random.seed()
-            sky = np.random.randn(N)*self.Ampl
-        
+        sky = WhiteNoiseSignal(time,Teq=self.Temp,rand_seed= self.random_seed)
+#        try:
+#            sky = WhiteNoiseSignal(time,self.Temp,self.random_seed)
+#        except:
+#            sky = WhiteNoiseSignal(time,self.Temp,self.random_seed)
+        print('Noise signal PSD %f'%(10*np.log10(np.std(sky)**2/50)+30-10*np.log10(self.SamplingRate/2)))
         return time,sky
         
     

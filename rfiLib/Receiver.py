@@ -155,7 +155,7 @@ class Receiver():
         
         plt.figure()
         plt.plot(time/us,S)
-        plt.title('%s signal in %s, telescope %s '%(signal,tap,self.Name))
+        plt.title('%s signal in %s,antenna %s'%(signal,tap,self.Name))
         plt.ylabel(unit)
         plt.xlabel('us')
 
@@ -204,7 +204,7 @@ class Receiver():
         
         plt.figure()
         plt.plot(freq/MHz,S)
-        plt.title('%s signal in %s, telescope %s '%(signal,tap,self.Name))
+        plt.title('%s signal in %s,antenna %s'%(signal,tap,self.Name))
         plt.ylabel(ylabel)
         plt.xlabel('MHz')
         
@@ -267,6 +267,7 @@ class Receiver():
     
         qsignal = np.digitize(signal,bins,True) - 2**(nbits-1)
         
+        
         # Convert to integers from 0 to fullscale
         return qsignal.astype('int')    
     
@@ -285,18 +286,21 @@ class Receiver():
             Applies the zero order model of the analog chain of DISH
         '''
         s_sky = np.copy(self.sky_source_rx) #signal with only sky source
-        s_rx = np.copy(self.Rx_signal) # signal ith sky source and RFI
+        s_rx = np.copy(self.Rx_signal) # signal with sky source and RFI
         t_s = np.copy(self.time)
         f_s = np.copy(self.SampleRate)
         
         if Band == 'B1':
             print('Applying Band 1')
             """Zero'th order model for MID B1 EM+analogue section """
+            # for the signal only case
             s = s_sky
             # Approx. T_ant = sky + atmosphere + spillover @ ZA=0 (40@350MHz, 10@1050MHz) [SKA-TEL-DSH-0000082 rev 1, fig 20]
-            s += WhiteNoiseSignal(t_s, Teq=25)
+            tAntNoise = WhiteNoiseSignal(t_s, Teq=25)
             # Approx. T_rx (18.5@1050MHz) [SKA-TEL-DSH-0000082, rev 1, table 2]
-            s += WhiteNoiseSignal(t_s, Teq=18.5)
+            tRxNoise = WhiteNoiseSignal(t_s, Teq=18.5)
+            
+            s += tAntNoise + tRxNoise
             # Filtering
             s = band_limit(s, f_s, (350*MHz,1050*MHz), (300*MHz,1200*MHz), 0.5, 40, ftype="ellip") # [SKA-TEL-DSH-00000021 rev 2, fig 14]
             
@@ -306,13 +310,14 @@ class Receiver():
             
             # Gain
             s *= 10**((56+32.5-self.Atten)/20.)
-            s_sky = s
+            s_sky = np.copy(s)
 
+            # for the signal + RFI case
             s = s_rx
+            
             # Approx. T_ant = sky + atmosphere + spillover @ ZA=0 (40@350MHz, 10@1050MHz) [SKA-TEL-DSH-0000082 rev 1, fig 20]
-            s += WhiteNoiseSignal(t_s, Teq=25)
-            # Approx. T_rx (18.5@1050MHz) [SKA-TEL-DSH-0000082, rev 1, table 2]
-            s += WhiteNoiseSignal(t_s, Teq=18.5)
+            s += tAntNoise + tRxNoise
+            
             # Filtering
             s = band_limit(s, f_s, (350*MHz,1050*MHz), (300*MHz,1200*MHz), 0.5, 40, ftype="ellip") # [SKA-TEL-DSH-00000021 rev 2, fig 14]
             
@@ -322,7 +327,7 @@ class Receiver():
             
             # Gain
             s *= 10**((56+32.5-self.Atten)/20.)
-            s_rx = s
+            s_rx = np.copy(s)
 
 
 
@@ -330,11 +335,14 @@ class Receiver():
         if Band == 'B2':
             print('Applying Band 2')
             """Zero'th order model for MID B2 EM+analogue section """
-            s = s_sky
+            # for the signal only case
+            s = np.copy(s_sky)
             # Approx. T_ant = sky + atmosphere + spillover ZA=0 (8.2@950MHz, 5.8@1760MHz) [SKA-TEL-DSH-0000111, rev 1, fig 37]
-            s = s + WhiteNoiseSignal(t_s, Teq=7)
+            tAntNoise = WhiteNoiseSignal(t_s, Teq=7)
             # Approx. T_rx (10.6@1650MHz, 12.1@3050MHz) SKA-TEL-DSH-0000111, rev 1
-            s += WhiteNoiseSignal(t_s, Teq=11)
+            tRxNoise = WhiteNoiseSignal(t_s, Teq=11)
+            
+            s += tAntNoise + tRxNoise
             # Filtering
             s = band_limit(s, f_s, (950*MHz,1760*MHz), (800*MHz,2000*MHz), 0.5, 50, ftype="cheby1") # [SKA-TEL-DSH-00000021 rev 2, fig 15]
              
@@ -344,20 +352,18 @@ class Receiver():
             
             # Gain
             s *= 10**((56+32+self.Atten)/20.)
-            s_sky = s
-                       
+            s_sky = np.copy(s)                       
             
-            s = s_rx
-            # Approx. T_ant = sky + atmosphere + spillover ZA=0 (8.2@950MHz, 5.8@1760MHz) [SKA-TEL-DSH-0000111, rev 1, fig 37]
-            s = s + WhiteNoiseSignal(t_s, Teq=7)
-            # Approx. T_rx (10.6@1650MHz, 12.1@3050MHz) SKA-TEL-DSH-0000111, rev 1
-            s += WhiteNoiseSignal(t_s, Teq=11)
+            # for the signal + RFI case            
+            s = np.copy(s_rx)
+            s += tAntNoise + tRxNoise
+
             # Filtering
             s = band_limit(s, f_s, (950*MHz,1760*MHz), (800*MHz,2000*MHz), 0.5, 50, ftype="cheby1") # [SKA-TEL-DSH-00000021 rev 2, fig 15]
              
             # Gain
             s *= 10**((56+32+self.Atten)/20.)
-            s_rx = s
+            s_rx = np.copy(s)
 
 
             
@@ -427,6 +433,6 @@ class Receiver():
             # Gain
             s *= 10**((56+14+4-self.Atten)/20.)
             
-        self.ADC_input_rx = s_rx    #Sky ignal plus RFI
-        self.ADC_input_sky = s_sky   # only sky signal and white noise from rcvr.
+        self.ADC_input_rx = np.copy(s_rx)    #Sky ignal plus RFI
+        self.ADC_input_sky = np.copy(s_sky)   # only sky signal and white noise from rcvr.
         
