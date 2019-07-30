@@ -50,11 +50,11 @@ class Signal():
             SamplingFreq = self.SamplingRate
             fc = self.CenterFreq
             Bw = 0.5*MHz #0.5% of center frequency
-            t = np.linspace(-period/2,period/2,period*SamplingFreq)
+            t = np.linspace(-period/2+1/SamplingFreq,period/2,period*SamplingFreq)
     
             [k,env1] = Sig.gausspulse(t,fc,(Bw/fc),retenv=1) #envelope of the gauss pulse
             env2 = np.roll(env1,int(offset*SamplingFreq)) #envelope shifted in time to generate the second pulse.
-            t = np.linspace(0,period,period*SamplingFreq)
+            t = np.linspace(1/SamplingFreq,period,period*SamplingFreq)
             env = env1 + env2        
         
             sine = np.sin(2*np.pi*fc*t+ini_phase)
@@ -96,7 +96,7 @@ class Signal():
                     pulse_shift = (np.round(np.random.random(1))).astype(int)
                     env[i*N:(i+1)*N] = np.roll(pulse_env,int(pulse_shift*period/2*SamplingFreq))
                 
-                t = np.linspace(0,period,period*SamplingFreq)
+                t = np.linspace(1/SamplingFreq,period,period*SamplingFreq)
             else:
                 env = np.zeros(int(self.Duration*SamplingFreq)) #envelope is the same duration as the test case
                 for i in range(120):
@@ -107,7 +107,7 @@ class Signal():
                     pulse_shift = (np.round(np.random.random(1))).astype(int)
                     env[i*N:(i+1)*N] = np.roll(pulse_env,int(pulse_shift*period/2*SamplingFreq))
                 
-                t = np.linspace(0,self.Duration,self.Duration*SamplingFreq)
+                t = np.linspace(1/SamplingFreq,self.Duration,self.Duration*SamplingFreq)
                 
             sine = np.sin(2*np.pi*fc*t+ini_phase)
             S = sine*env
@@ -126,7 +126,7 @@ class Signal():
         if self.Name == 'DME':
             SymLen = 1e-3 #lenght of the symbol
             samples_sym = int((SymLen*fs)) #number of samples in a symbol
-            N_Symbols = int((L/SymLen)) #number of symbles + 1 because of the rounding.
+            N_Symbols = int((L/SymLen)) + 1 #number of symbles + 1 because of the rounding.
             samples_tot = int((N_Symbols*samples_sym)) # total number of samples
             np.random.seed(int(self.Seed*1)) #loads the seed in case of wanting to repeat the same signal. the multiplier changes the seed every time is used in the test case
             ini_phase = np.random.rand(1)*2*np.pi #random phase for the signal generator
@@ -139,10 +139,10 @@ class Signal():
             displace = int(np.random.rand(1)*(N-N_pulse))
             for i in range(N_Symbols):
                 t_aux,S[i*samples_sym:(i+1)*samples_sym] = self.Symbol(ini_phase, displace)        
-                if i>0:
-                    t_aux += t_aux[1]
+#                if i>0:
+#                    t_aux += t_aux[0]
 
-                t[i*samples_sym:(i+1)*samples_sym] = t_aux+t_aux[-1]*i
+                t[i*samples_sym:(i+1)*samples_sym] = t_aux+t[i*samples_sym -1]
             return t[t<=self.Duration] , S[t<=self.Duration]
             
         if self.Name == 'ADS-B':
