@@ -50,9 +50,10 @@ RFI Test case #1:
 '''
 
 #file parameters
-testCaseName = 'testCase3_8airplanes'
+testCaseName = 'testCase2_1airplane'
 skaMidAntPosFileSpec = './skaMidAntPositions.csv'
-randomSeed = int(30)
+randomSeed = int(24)
+#randomSeed = int(30)  # testCase3_8airplanes
 maxDelay = 1e-3 *u.s#
 
 #antenna pair to test
