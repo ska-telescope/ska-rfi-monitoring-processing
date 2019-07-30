@@ -29,7 +29,9 @@ class Receiver():
                  Position=dict(Latitude = -30.71329*u.deg, \
                                Longitude = 21.449412*u.deg),\
                                Pointing=dict(Elev=90*u.deg,Azimuth=0*u.deg),\
-                               duration=4.*GHz,SampleRate=.5*ms):
+                               duration=.5*ms,SampleRate=4.*GHz,freqOffset=0,\
+                               band = 'B2'):
+        self.band = band
         self.height = 0
         self.Name = Name
         self.lat = Position['Latitude']
@@ -41,10 +43,15 @@ class Receiver():
         self.Pos = [Posx,Posy,Posz]
         self.Pointing = Pointing
         self.SampleRate = SampleRate
+        self.freqOffset = freqOffset
         self.Duration = duration
         self.sky_source_rx = []
         self.Rx_signal = []
         self.time = []
+        self.sky_source_rx_foffset = []
+        self.Rx_signal_foffset = []
+        self.time_foffset = []
+
         #self.Pointing = self.Pointing()
         
         
@@ -210,7 +217,7 @@ class Receiver():
         
     
 
-    def DownSample(signal, f_s, f_s_new):
+    def Apply_freq_offset(self): 
         """
             Re-sampling by linear interpolation (only down-sampling). Both time and amplitudes are re-sampled
             without scale change, so ENERGY IS CONSERVED but POWER IS NOT.
@@ -218,12 +225,20 @@ class Receiver():
             @param f_s_new: desired sampling rate, must be <= f_s.
             @return: (t_new, s_new) re-sampled copies of time and signal series.
              by Adriaan Peens-Hugh
+             modified by FDV 30/07/19 
         """
+        f_s = self.SampleRate
+        f_s_new = self.SampleRate + self.freqOffset
+        
         assert (f_s >= f_s_new), "sample() does not support up-sampling!"
-        t = np.arange(0, len(signal), step=1)*1/f_s
-        t_new = np.arange(0, len(signal), step=f_s/f_s_new)*1/f_s
-        signal = np.interp(t_new, t, signal)
-        return t_new, signal
+        
+        t_new = np.linspace(1/f_s_new, self.time[-1],self.time[-1]*f_s_new )
+
+        self.ADC_output_rx_foffset = np.interp(t_new, self.time, self.ADC_output_rx)
+        
+        self.ADC_output_sky_foffset = np.interp(t_new, self.time, self.ADC_output_sky)
+        self.time_foffset = t_new
+
     
     def Noise_scale(self, s,scaling,nBits,Gain = 0, Vfs=1):
         """
@@ -306,27 +321,23 @@ class Receiver():
             
             # Attenuation scaling, according to the scaling strategy
             Gain = self.Noise_scale(s,scaling,12)
-            self.Atten =  Gain+56+32.5 # calculates the real value needed to set the attenuators.
+            self.Atten =  Gain-56-32.5 # calculates the real value needed to set the attenuators.
             
             # Gain
-            s *= 10**((56+32.5-self.Atten)/20.)
+            s *= 10**((56+32.5+self.Atten)/20.)
             s_sky = np.copy(s)
+
+
 
             # for the signal + RFI case
             s = s_rx
             
             # Approx. T_ant = sky + atmosphere + spillover @ ZA=0 (40@350MHz, 10@1050MHz) [SKA-TEL-DSH-0000082 rev 1, fig 20]
             s += tAntNoise + tRxNoise
-            
             # Filtering
             s = band_limit(s, f_s, (350*MHz,1050*MHz), (300*MHz,1200*MHz), 0.5, 40, ftype="ellip") # [SKA-TEL-DSH-00000021 rev 2, fig 14]
-            
-            # Attenuation scaling, according to the scaling strategy
-#            Gain = self.Noise_scale(s,scaling,12)
-            self.Atten =  Gain+56+32.5 # calculates the real value needed to set the attenuators.
-            
             # Gain
-            s *= 10**((56+32.5-self.Atten)/20.)
+            s *= 10**((56+32.5+self.Atten)/20.)
             s_rx = np.copy(s)
 
 

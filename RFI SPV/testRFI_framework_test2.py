@@ -50,9 +50,9 @@ RFI Test case #1:
 '''
 
 #file parameters
-testCaseName = 'test2'
+testCaseName = 'testCase3_8airplanes'
 skaMidAntPosFileSpec = './skaMidAntPositions.csv'
-randomSeed = int(22)
+randomSeed = int(30)
 maxDelay = 1e-3 *u.s#
 
 #antenna pair to test
@@ -73,7 +73,7 @@ scaling = 'Correlator_opimized'
 #Test configuration parameters
 promptFlg = False #interactive mode prompts user at various processing steps
 runFlg = True #can be used to skip over processing
-saveFlg = False #results are saved if true
+saveFlg = True #results are saved if true
 loadFlg = False #results are loaded if true
 plot_signal = True #plot time series signal
 plot_spectrum = True #plot spectrum
@@ -116,12 +116,14 @@ if((prompt('Generate Antenna & Receivers [enter]?')=='') & runFlg):
     antRxL.append(Receiver(skaMidAntPos.loc[tstAnt1Key].name,
                     dict(Latitude = skaMidAntPos.loc[tstAnt1Key].lat*u.deg, 
                         Longitude = skaMidAntPos.loc[tstAnt1Key].lon*u.deg),
-                        antAzEl, Duration, SamplingRate))
+                        antAzEl, Duration, SamplingRate,freqOffset=-1e3,
+                        band = 'B2'))
                     
     antRxL.append(Receiver(skaMidAntPos.loc[tstAnt2Key].name,
                     dict(Latitude = skaMidAntPos.loc[tstAnt2Key].lat*u.deg, 
                          Longitude = skaMidAntPos.loc[tstAnt2Key].lon*u.deg),
-                         antAzEl, Duration, SamplingRate))
+                         antAzEl, Duration, SamplingRate,freqOffset=-0.5e3,
+                         band = 'B2'))
 
 
     print('Created antennas: ')
@@ -169,7 +171,7 @@ else:
 #The output signal is stored in Receiver.ADC_output_rx (with RFI) or ADC_output_sky (without RFI)
 if((prompt('Apply aperture signals to rx chain model [enter]?')=='') & runFlg):
     antRxL = Apply_DISH(antRxL,Band,scaling, atten = 0) 
-    print('Taking antenna aperture singal applying to analog signal chain of :')
+    print('Taking antenna aperture signals, applying to analog signal chain of :')
     for a in antRxL: 
         print(a.Name)
 else:

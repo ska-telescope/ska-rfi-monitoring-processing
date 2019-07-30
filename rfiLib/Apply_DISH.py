@@ -36,7 +36,11 @@ def Apply_DISH(Telescope_list,Band='B1',scaling = 'Correlator_opimized', atten =
         
         # digitize the signals.
         Telescope_list[i].Apply_ADC(nBits=12)
-        # The output signal is stored in Receiver.ADC_output        
+        # The output signal is stored in Receiver.ADC_output    
+        
+        #TO-DO: frequency offset scheme.
+#        Telescope_list[i].Apply_freq_offset()
+        
     
     return Telescope_list
     

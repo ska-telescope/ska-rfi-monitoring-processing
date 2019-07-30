@@ -33,7 +33,8 @@ def saveAntInData(antL, filePrefixName):
         antDict['time'] = ant.time
         antDict['sky_source_rx'] = ant.sky_source_rx
         antDict['Rx_signal'] = ant.Rx_signal
-        sio.savemat(filePrefixName + 'AntIn' + ant.Name.capitalize(), antDict)
+        antDict['band'] = ant.band
+        sio.savemat(filePrefixName + 'AntIn' + ant.Name.capitalize()+'.mat', antDict)
 
 def saveAdcInData(antL, filePrefixName):
     """ Saves adc input data for each antenna in antL to MATLAB file named filePrefixName + antL[0].Name"""
@@ -50,10 +51,11 @@ def saveAdcInData(antL, filePrefixName):
         antDict['time'] = ant.time
         antDict['ADC_input_rx'] = ant.ADC_input_rx
         antDict['ADC_input_sky'] = ant.ADC_input_sky
+        antDict['band'] = ant.band
 
 #        sio.savemat(filename+'_'+str(i), {"time":Telescope_list[i].time,"ADC_output_rx":Telescope_list[i].ADC_output_rx,"ADC_output_sky":Telescope_list[i].ADC_output_sky })
         # instead of saving the time vector save the sample rate, the time vector can be calculated.
-        sio.savemat(filePrefixName + 'AdcIn' + ant.Name.capitalize(), antDict)
+        sio.savemat(filePrefixName + 'AdcIn' + ant.Name.capitalize()+'.mat', antDict)
 
 def saveAdcOutData(antL, filePrefixName):
     """ Saves adc output data for each antenna in antL to MATLAB file named filePrefixName + antL[0].Name"""
@@ -70,10 +72,11 @@ def saveAdcOutData(antL, filePrefixName):
         antDict['time'] = ant.time
         antDict['ADC_output_rx'] = ant.ADC_output_rx
         antDict['ADC_output_sky'] = ant.ADC_output_sky
+        antDict['band'] = ant.band
 
 #        sio.savemat(filename+'_'+str(i), {"time":Telescope_list[i].time,"ADC_output_rx":Telescope_list[i].ADC_output_rx,"ADC_output_sky":Telescope_list[i].ADC_output_sky })
         # instead of saving the time vector save the sample rate, the time vector can be calculated.
-        sio.savemat(filePrefixName + 'AdcOut' + ant.Name.capitalize(), antDict)
+        sio.savemat(filePrefixName + 'AdcOut' + ant.Name.capitalize()+'.mat', antDict)
         
 def loadAntInData(antL, filePrefixName):
     """Load antenna data for each antenna in antL from MATLAB file named filePrefixName + antL[0].Name"""
