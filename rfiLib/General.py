@@ -67,11 +67,12 @@ def saveAdcOutData(antL, filePrefixName):
         antDict['lon'] = ant.lon.value
         antDict['Az'] = ant.Pointing['Azimuth'].value
         antDict['El'] = ant.Pointing['Elev'].value
-        antDict['SampleRate'] = ant.SampleRate
+        antDict['SampleRate'] = ant.antSampleRate
         antDict['Duration'] = ant.Duration
-        antDict['time'] = ant.time
-        antDict['ADC_output_rx'] = ant.ADC_output_rx
-        antDict['ADC_output_sky'] = ant.ADC_output_sky
+        antDict['time'] = ant.time_foffset
+        antDict['ADC_output_rx'] = ant.ADC_output_rx_foffset
+        antDict['ADC_output_sky'] = ant.ADC_output_sky_foffset
+
         antDict['band'] = ant.band
 
 #        sio.savemat(filename+'_'+str(i), {"time":Telescope_list[i].time,"ADC_output_rx":Telescope_list[i].ADC_output_rx,"ADC_output_sky":Telescope_list[i].ADC_output_sky })
