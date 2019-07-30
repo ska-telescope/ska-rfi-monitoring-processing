@@ -21,13 +21,14 @@ k_bolt = 1.23e-38
 
 
 def Receive_RFI(Telescope_list, Emitter_list,Duration,SamplingRate,plot_flag=0):
-    max_delay_samples = (0) #Calculates the maximum delay in the signals to obtain same length
     total_samples = int(Duration*SamplingRate)
+    delay_samples = np.zeros([len(Telescope_list),len(Emitter_list)])
+    FSPL = np.zeros([len(Telescope_list),len(Emitter_list)])
     
     for i in range(len(Telescope_list)):
         print('\n\nTelescope: ' + Telescope_list[i].Name)
         Telescope_list[i].Rx_signal = np.zeros(total_samples)
-        Telescope_list[i].time = np.linspace(0,Duration,total_samples)
+        Telescope_list[i].time = np.linspace(1/SamplingRate,Duration,total_samples)
         
         for j in range(len(Emitter_list)):
             print('\nEmitter: ' + Emitter_list[j].Name)
@@ -40,34 +41,34 @@ def Receive_RFI(Telescope_list, Emitter_list,Duration,SamplingRate,plot_flag=0):
                 
                 # Here something that calculates the range and the time delay.
                 #  TO-DO: Path should take into account the relative movement of both source and receiver.
-                FSPL,delay = Path(Pos_Tx[:,0],Pos_Rx,fc) # Note: delay only depends on the range.
-
-                delay_samples = int(delay*SamplingRate)
-                if delay_samples > max_delay_samples:
-                    max_delay_samples = delay_samples
-                    if max_delay_samples/SamplingRate > Duration:
-                        raise Exception('RFI Source ' + Emitter_list[j].Signals[k].Name + \
-                              ' Delay is %0.2f us, greater than test case duration' % (max_delay_samples/SamplingRate/us))
-                        
+                FSPL[i,j],delay = Path(Pos_Rx,Pos_Tx[:,0],fc) # Note: delay calculation updated
+                delay_samples[i,j] = int(delay*SamplingRate)
 
                         
                 FSPL_times = 10**(-FSPL/20)
                 
-                #Attenuate: Antenna gain is not included at the moment
-                Sig_aux = FSPL_times*Emitter_list[j].Signals[k].data
-                
-                #Delay:
-                Sig_aux = np.roll(Sig_aux,-delay_samples) # the delay makes the signal arrive later to the receiver
-                
-                Telescope_list[i].Rx_signal[0:len(Sig_aux)] += Sig_aux
 
+    # apply the delay to each emitter on each receiver
+    for j in range(len(Emitter_list)):
+        delay_emitter = delay_samples[:,j]-delay_samples[:,j].min() # calculate the differential delays
+        # if there is a receiver with 0 delay, it must be delayed with max_delay, the receiver with the largest delay
+        # gets the zero delay to be able to chop different parts of the same emitter
+        delay_emitter -= delay_emitter.max()
+        for i in range(len(Telescope_list)):
+            for k in range(len(Emitter_list[j].Signals)):
+                #Attenuate: Antenna gain is not included at the moment
+                Sig_aux = FSPL_times[i,j]*Emitter_list[j].Signals[k].data
+    
+                Sig_aux = np.roll(Sig_aux,int(delay_emitter[i])) # the delay makes the signal arrive earlier to the receiver                
+                Telescope_list[i].Rx_signal += Sig_aux[0:total_samples]    
             
-#    print('chopping the received signals with max delay')
-    for i in range(len(Telescope_list)):
-#        print('\n\nTelescope: ' + Telescope_list[i].Name)
-        total_samples = int(Duration*SamplingRate)
-        Telescope_list[i].time = Telescope_list[i].time[0:(total_samples-max_delay_samples)]
-        Telescope_list[i].Rx_signal = Telescope_list[i].Rx_signal[0:int(total_samples-max_delay_samples)]
+            
+##    print('chopping the received signals with max delay')
+#    for i in range(len(Telescope_list)):
+##        print('\n\nTelescope: ' + Telescope_list[i].Name)
+#        total_samples = int(Duration*SamplingRate)
+#        Telescope_list[i].time = Telescope_list[i].time[0:(total_samples-max_delay_samples)]
+#        Telescope_list[i].Rx_signal = Telescope_list[i].Rx_signal[0:int(total_samples-max_delay_samples)]
 
     if plot_flag:
         Telescope_list[0].plot_signal('abs','RFI')
