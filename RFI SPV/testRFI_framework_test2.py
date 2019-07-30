@@ -14,17 +14,10 @@ a support library. Make sure this library is in your PYTHONPATH
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.units as u
+import astropy.constants as const
 import pandas as pd
 
 #RFI support functions
-"""
-import rfiLib.Sky as Sky
-from rfiLib import Emitter as Emitter
-import rfiLib.Receiver as Receiver
-import rfiLib.Receive_RFI as Receive_RFI
-import rfiLib.Receive_Sky as Receive_Sky
-import rfiLib.Apply_DISH as Apply_DISH
-"""
 
 from rfiLib.Sky import Sky
 from rfiLib.Emitter import Emitter
@@ -60,6 +53,7 @@ RFI Test case #1:
 testCaseName = 'test2'
 skaMidAntPosFileSpec = './skaMidAntPositions.csv'
 randomSeed = 22.
+maxDelay = 1e-3 *u.s#
 
 #antenna pair to test
 tstAnt1Key = 'SKA001'
@@ -70,7 +64,7 @@ antAzEl = dict(Elev=90*u.deg,Azimuth=0*u.deg)
 
 #Receiver and temporal parameters
 Band = 'B2'
-Duration = 4.*ms
+Duration = 2.*ms
 SamplingRate = 4*GHz # THis is the analog sampling rate
 
 #ADC scaling
@@ -79,11 +73,11 @@ scaling = 'Correlator_opimized'
 #Test configuration parameters
 promptFlg = False #interactive mode prompts user at various processing steps
 runFlg = True #can be used to skip over processing
-saveFlg = True #results are saved if true
+saveFlg = False #results are saved if true
 loadFlg = False #results are loaded if true
-plot_signal = False #plot time series signal
+plot_signal = True #plot time series signal
 plot_spectrum = False #plot spectrum
-plot_corr = False   #plot correlation
+plot_corr = True   #plot correlation
           
 
 #%% Generation of the test case
@@ -99,12 +93,12 @@ skaMidAntPos = pd.read_csv(skaMidAntPosFileSpec, comment='#', index_col=0)
 #Generate the RFI sources or emitters:
 if((prompt('Generate RFI Sources [enter]?')=='') & runFlg):
     rfiSrcL = list([])
-    rfiSrcL.append(Emitter('rfiSrc1','Airplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=20*u.deg), Duration, SamplingRate,[],random_seed=randomSeed,forceSignals=0))
+    rfiSrcL.append(Emitter('rfiSrc1','Airplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=20*u.deg), Duration+maxDelay.value, SamplingRate,[],random_seed=randomSeed,forceSignals=0))
     rfiSrcL.append(Emitter('rfiSrc2','Airplane',dict(height_i = 10*u.km, lat_i = -30.44*u.deg, lon_i=19.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*2,forceSignals=0))
     rfiSrcL.append(Emitter('rfiSrc3','Airplane',dict(height_i = 10*u.km, lat_i = -31.7*u.deg, lon_i=20.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*3,forceSignals=1))
     rfiSrcL.append(Emitter('rfiSrc4','Airplane',dict(height_i = 10*u.km, lat_i = -31*u.deg, lon_i=21*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*4,forceSignals=0))
     rfiSrcL.append(Emitter('rfiSrc5','Airplane',dict(height_i = 10*u.km, lat_i = -30.7*u.deg, lon_i=21.3*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*5,forceSignals=0))
-    rfiSrcL.append(Emitter('rfiSrc6','Airplane',dict(height_i = 10*u.km, lat_i = -30.4*u.deg, lon_i=21.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*6,forceSignals=0))
+    rfiSrcL.append(Emitter('rfiSrc6','Airplane',dict(height_i = 10*u.km, lat_i = -30.4*u.deg, lon_i=21.5*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*6,forceSignals=1))
     rfiSrcL.append(Emitter('rfiSrc7','Airplane',dict(height_i = 10*u.km, lat_i = -30*u.deg, lon_i=21.8*u.deg), Duration, SamplingRate,[],random_seed=randomSeed*7,forceSignals=0))
 
 
@@ -141,7 +135,7 @@ else:
 if((prompt('Generate Sky sources [enter]?')=='') & runFlg):
     skySrcL = list()
     
-    skySrcL.append(Sky('Sky_source1', dict(lat= -31.340773 *u.deg,lon= 21.44*u.deg), SamplingRate, Duration, Temperature = 10))
+    skySrcL.append(Sky('Sky_source1', dict(elev=90 *u.deg,az= 0*u.deg),antRxL[0].Pos, SamplingRate, Duration+maxDelay.value, Temperature = 10))
 #    skySrcL = list([skySrc1])
     print('Created sky sources: ')
     for a in skySrcL: 
@@ -200,7 +194,7 @@ if plot_signal:
         antRx.plot_signal('antIn','RFI','volt') #mode= absVolt, volt, powerLin, powerLog
         antRx.plot_signal('adcIn','RFI','volt')
         antRx.plot_signal('adcOut','RFI','volt') 
-        
+        antRx.plot_signal('adcOut','sky','volt') 
 
 
 if plot_spectrum:
@@ -223,13 +217,13 @@ TO-DO:
 
 if plot_corr:
 #    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].Rx_signal)*np.conjugate(np.fft.fft(antRxL[1].Rx_signal))))
-    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].Rx_signal)*np.conjugate(np.fft.fft(antRxL[1].ADC_output_rx))))
+    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].ADC_output_rx)*np.conjugate(np.fft.fft(antRxL[1].ADC_output_rx))))
     plt.figure()
     plt.plot(Corr)
     plt.title('Correlation of RFI + signal')
  
 #    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].sky_source_rx)*np.conjugate(np.fft.fft(antRxL[1].sky_source_rx))))
-    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].Rx_signal)*np.conjugate(np.fft.fft(antRxL[1].ADC_output_sky))))
+    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].ADC_output_sky)*np.conjugate(np.fft.fft(antRxL[1].ADC_output_sky))))
     plt.figure()
     plt.plot(Corr)
     plt.title('Correlation of intended signal')
