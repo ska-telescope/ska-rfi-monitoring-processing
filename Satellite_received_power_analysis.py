@@ -27,7 +27,7 @@ import pyproj
 
 font = {'family' : 'DejaVu Sans',
         'weight' : 'normal',
-        'size'   : 24}
+        'size'   : 10}
 
 matplotlib.rc('font', **font)
 
@@ -142,32 +142,31 @@ def received_power(Rx_vect,T,Pointing_el,Pointing_az,A):
     Pointing_el: elevation pointing
     Pointing_az: azimuth pointing
     A: position of each satellite in [sat number,time step, [x,y,z]]
+    
+    Returns: 
+        PSDrx_t : time vector with received total Power spectral density (i.e from all the satellites)
+        
     '''
-    
-    
     
     N_sats = np.size(A,0)
     freq = 11*u.GHz
     
-    pointing = [Pointing_el,Pointing_az]*u.deg #  elevation, Azumith
-    
-    
     
     # transform the pointing direction to the ECEF frame
-    pointingENU = np.array(Pointing_to_ENU(pointing[0],pointing[1]))
+    pointingENU = np.array(Pointing_to_ENU(Pointing_el,Pointing_az))
     pointingECEF = np.matmul(T,pointingENU) #unit vector
-
+    pointingECEF = np.reshape(np.array(pointingECEF),[3,1])
     
     PSDrx = np.ones([np.size(A,1),N_sats])*-500 
-      
+    A = np.transpose(A)  
     for i in range(N_steps):
-        D = np.transpose(A[:,i,:]) - Rx_vect
+        D = A[:,i,:] - Rx_vect
         D_norm = np.linalg.norm(D,axis=0)
         index = np.where(D_norm<2700)[0].astype('int32')
         
         FSPL = Free_space((D_norm[index]*u.km).to('m'),freq.to('MHz'))
         
-        Point_vect = np.dot(np.reshape(np.array(pointingECEF),[3,1]),np.ones([1,len(index)]))
+        Point_vect = np.dot(pointingECEF,np.ones([1,len(index)]))
         cos_alpha1 = ((Point_vect*D[:,index]).sum(0)/D_norm[index])    
         
         alpha = np.arccos(cos_alpha1)*180/np.pi
@@ -191,26 +190,75 @@ def propagate_orbits(step,N_steps,sats,rand_seed=0):
     '''
 
     
-    N_sats = N_planes*Sats_per_plane
+    N_sats = len(sats)
     angle_vel = 2*np.pi/24/3600 #rad/sec
     theta = 0
     axis =[0,0,1] # Earth obliquity is 23deg, should this be considered?    
 
-    np.random.seed(rand_seed)
-    rand_start = np.random.rand(1)*3600*u.s
+    np.random.seed(int(rand_seed))
+    rand_start = np.random.rand(1)*10*24*3600*u.s
     
     A = np.zeros([N_sats,N_steps,3])
-    i=0
-    for sat in sats:
+    total = N_steps*len(sats)
+    k=0
+    for j in range(N_steps):
+        i=0
+        theta = (j*step + rand_start.value)*angle_vel    
+        for sat in sats:
 
-        for j in range(N_steps):
-            theta += step*angle_vel    
-            ss_delta = sat.propagate(step*u.s + rand_start) #propagate the orbit for the step time
+            ss_delta = sat.propagate(j*step*u.s + rand_start) #propagate the orbit for the step time
             [x,y,z] = ss_delta.r # get the position in ECEF frame
             [x1,y1,z1] = np.dot(rotation_matrix(axis, theta), [x.value,y.value,z.value]) # Rotate the frame along Z axis (simulate earth rotation)
             A[i,j,:] = np.array([x1,y1,z1])
-            print('Sat number %d - Timestep %d' %(i,j))    
+#            print('Sat number %d - Timestep %d' %(i,j))    
+            print('Propagate_orbit: %.2f %%'%(k*100/total))    
+            i+=1
+            k+=1     
+    return A
+
+def propagate_orbits2(step,N_steps,sats,rand_seed=0):
+    '''
+        step: time step
+        N_steps: number of time steps
+        sats: list of satellite orbits
+        
+    '''
+    step_propagate = 500 # time step to propagate the trajectory.
+    N_steps_propagate = int(step*N_steps/step_propagate)+1 #number of steps to propagate
+    
+    N_sats = len(sats)
+    angle_vel = 2*np.pi/24/3600 #rad/sec
+    theta = 0
+    axis =[0,0,1] # Earth obliquity is 23deg, should this be considered?    
+
+    np.random.seed(int(rand_seed))
+    rand_start = np.random.rand(1)*10*24*3600*u.s
+    theta0 = (rand_start.value)*angle_vel    
+    
+    A = np.zeros([N_sats,N_steps,3])
+
+    t0 = np.linspace(0,N_steps_propagate*step_propagate,N_steps_propagate)
+    t1 = np.linspace(0,N_steps*step,N_steps)
+    
+    i=0    
+    for sat in sats: #for each satellite
+        x1 = np.zeros(N_steps_propagate)
+        y1 = np.zeros(N_steps_propagate)
+        z1 = np.zeros(N_steps_propagate)
+        for j in range(N_steps_propagate): #propagation loop
+            theta = j*step_propagate*angle_vel + theta0
+            ss_delta = sat.propagate(j*step_propagate*u.s + rand_start) #propagate the orbit for the step time
+            [x,y,z] = ss_delta.r # get the position in ECEF frame
+            [x1[j],y1[j],z1[j]] = np.dot(rotation_matrix(axis, theta), [x.value,y.value,z.value]) # Rotate the frame along Z axis (simulate earth rotation)
+            
+        
+        #finish propagation of the satellite, interpoate the track
+        x_int = np.interp(t1,t0,x1)
+        y_int = np.interp(t1,t0,y1)
+        z_int = np.interp(t1,t0,z1)
+        A[i,:,:] = np.transpose(np.array([x_int,y_int,z_int]))        
         i+=1
+        print('Sat number %d ' %(i))        
     return A
 
 #%% satellite parameters
@@ -223,229 +271,244 @@ nu_step = 360/Sats_per_plane    #Declination steps
 height = 550    
 inclination = 53    
 
-
-G_sat_sidelobes = -10 # sidelobes
-
-P_saturation = -90 #dBm
-R_earth = 6300*km
-
-
-# satellite parameters
 EIRP_4kHz = -15 #dBW/4kHz
 BW_ch = 250*MHz
 fmin = 10.7*GHz #minimum assigned frequency
 fmax = 12.7*GHz #max assigned frequency
-
-
-#calcs
-freq = 11*u.GHz # np.linspace(fmin,fmax,20)
 EIRP_Hz = EIRP_4kHz + 10*np.log10(1/(4*kHz))
 EIRP_250MHz = EIRP_Hz + 10*np.log10(250*MHz)
-EIRP_2000MHz = EIRP_Hz + 10*np.log10(2000*MHz)
 
 
+G_sat_sidelobes = -10 # Gain of a sidelobe
 
-#%% Simulation control: 
-# Core location
+
+# Receiver parameters
 SKA_core_lat = -30.71278*u.deg
 SKA_core_lon = 21.44305*u.deg
 SKA_core_h = 1000*u.m
 SKA_core_ECEF = np.array(pyproj.transform(lla,ecef,SKA_core_lon.value,SKA_core_lat.value,SKA_core_h.value))/km
 
+SKA_core_vect = np.dot(np.reshape(np.array(SKA_core_ECEF),[3,1]),np.ones([1,N_sats]))
+T = ENU_to_ECEF(SKA_core_lat,SKA_core_lon) # Transformation matrix from receiver ENU frame to ECEF frame
+
+P_saturation = -90 #dBm
+
+
+#%% Simulation control: 
+# Centre frequency 
+freq = 11*u.GHz # np.linspace(fmin,fmax,20)
+
+#Number of trials
+trials = 100
+
 #Pointing parameters
+elev_step = 2
 elev_min = 15*u.deg
 elev_max = 90*u.deg
-Az_min = 15*u.deg
-Az_max = 90*u.deg
 
 #Time control
-step = 30  # time step for the propagation of the satellites.
-totalHours = 0.1 #total duration of the simulation
+
+totalTime = 6000
+totalHours = totalTime/3600 #total duration of the simulation
+N_steps = 150
+step = totalTime/N_steps  # time step for the propagation of the satellites.
+
+#%% Generate the satellite constelation
+
+sats = list()
+for i in range(N_planes):
+    for k in range(Sats_per_plane):
+        sats.append(Generate_NGSO(height,inclination,i*raan_step,k*nu_step))
+        print(i,k)
+
+# Plot the constellation:
+#        TODO:
 
 
-#%% Generate the orbits for each satellite.
+#%% Calculate the grid points
+elev = np.linspace(elev_min.value,elev_max.value,int((elev_max.value-elev_min.value)/elev_step))*u.deg        
+N_elev = len(elev)
+el = list()
+az = list()
 
-totalTime = totalHours*3600
-N_steps = int(totalTime/step)
+for i in range(len(elev)):
+    width = np.array(90/N_elev/np.cos(elev[i])).astype('int32')
+    Az = (np.linspace(-180,180,int(360/width)))*u.deg
+    for j in range(len(Az)):
+        el.append(elev[i])
+        az.append(Az[j])
 
-try: #Try to load a saved file.
-    Aux = np.load('Starlink_constellation_propagation_%dhrs_step%d.npz'%(totalHours,step))
-    A = Aux['A']
-    step = Aux['step']
-    raise Exception
-except:
+# Plot the grid:
+#        TODO:
+
+
+#%% For each trial propagate the constellation and calculate the received power
+
+#prepare the loop:
+PSDrx = np.ones([trials,len(el),N_steps])*-500 # received power for each trial in each pointing in each time step
+
+total = trials*len(el)
+k=0
+A = np.zeros([trials,N_sats,N_steps,3])
+for i in range(trials):
+    rand_seed = np.random.rand(1)*100 #generate random seed
+    A[i,:,:,:] = propagate_orbits2(step,N_steps,sats,rand_seed)  # propagate the orbits with a random seed  
     
-    sats = list()
-    for i in range(N_planes):
-        for k in range(Sats_per_plane):
-            sats.append(Generate_NGSO(height,inclination,i*raan_step,k*nu_step))
-            print(i,k)
+    for j in range(len(el)):  # for each pointing direction (el,az)
+        PSDrx[i,j,:] = received_power(SKA_core_vect,T,el[j],az[j],A[i,:,:,:])
+#        print('Trial: %d Calculating El: %s  - Az: %s'%(i,el[j],az[j]))
+        print('Received power completed: %.2f'%(k*100/total))
+        k+=1
     
-    A = propagate_orbits(step,N_steps,sats,rand_seed=0)    
-    
-#    np.savez('Starlink_constellation_propagation_%dhrs_step%d'%(totalHours,step),A=A,step=step)     
 
-time = np.linspace(0,step*(N_steps-1),N_steps)
+#%% Calculate the average and the maximum values.
+PSDrx_linear = 10**(PSDrx/10)
+PSD_ave = 10*np.log10(np.sum(np.sum(PSDrx_linear,2),0)/total)
+PSD_max = 10*np.log10(np.max(np.max(PSDrx_linear,2),0))
+
+
+
+#%% plot the result
+
+for i in range(1):
+ 
+    z = np.array(PSD_ave+10*np.log10(BW_ch))
+    
+    #generate the grid to plot
+    el2 = np.zeros(len(el))
+    az2 = np.zeros(len(az))
+    for i in range(len(el)):
+        el2[i] = el[i].value        
+        
+    for i in range(len(az)):
+        az2[i] = az[i].value        
+        
+    y = np.array(el2)
+    x = np.array(az2)
+    
+    
+    import matplotlib.tri as mtri
+    
+    triang = mtri.Triangulation(x, y)
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1,projection='3d')
+    
+    ax.plot_trisurf(triang, z, cmap='jet')
+    
+    ax.view_init(elev=90, azim=-90)
+    
+    ax.set_xlabel('Azimuth')
+    ax.set_ylabel('Elevation')
+    ax.set_zlabel('Ave power dBm ')
+    
+    plt.title('Received power in %d trials, %d steps of %.2f seg'%(trials,N_steps,step))
+    plt.show()
+    
+
 
 #%% Plot orbits in the full time calculated
    # plot over the map with PLateeCarree projection.
 
-plot_Map = 0
+plot_Map = 1
 if plot_Map:    
     fig = plt.figure(figsize=[20,10])
     ax = plt.axes(projection=ccrs.PlateCarree())
     ax.stock_img()
-    
-    for i in range(N_steps):
-        lon,lat,alt = pyproj.transform(ecef,lla,A[:,i,0]*1e3,A[:,i,1]*1e3,A[:,i,2]*1e3)
-        ax.plot(lon,lat, color='blue', linewidth=0.1,transform=ccrs.Geodetic())
-        print('Drawing trajectory, completed: %.2f'%(i/N_steps*100))
-
+    total = N_steps*trials
+    k=0
+    col = list(['b','r'])
+    for j in range(2):
+        for i in range(100):
+            lon,lat,alt = pyproj.transform(ecef,lla,A[j,:,i,0]*1e3,A[j,:,i,1]*1e3,A[j,:,i,2]*1e3) #plot all sats
+#            lon,lat,alt = pyproj.transform(ecef,lla,A[j,20,i,0]*1e3,A[j,20,i,1]*1e3,A[j,20,i,2]*1e3) #plot only one sat
+            ax.scatter(lon,lat,color=col[j], linewidth=0.02,transform=ccrs.Geodetic())
+            print('Drawing trajectory, completed: %.2f'%(k/total*100))
+            k+=1
 
 
 #%% Calculate the agregated power as a function of time
 # Consier case of SKA-MID pointing to zenith and  the NGSO not pointing to SKA antenna
-
-
-pointing = [45,90]*u.deg #  elevation, Azumith
-
-
-# transform the pointing direction to the ECEF frame
-pointingENU = np.array(Pointing_to_ENU(pointing[0],pointing[1]))
-T = ENU_to_ECEF(SKA_core_lat,SKA_core_lon) 
-pointingECEF = np.matmul(T,pointingENU) #unit vector
-
-
-
-pointing_lat,pointing_lon = ENU_to_latlon(pointingECEF*(Re.value+550e3))
-# PLot the distribution of the satelites with the GAin as colors
-fig = plt.figure(figsize=[15,8])
-ax = plt.axes(projection=ccrs.PlateCarree())
-ax.stock_img()
-
-#SKA_core_lon,SKA_core_lat,alt = pyproj.transform(ecef,lla,SKA_core_ECEF[0]*1e3,SKA_core_ECEF[1]*1e3,SKA_core_ECEF[2]*1e3)
-ax.plot(SKA_core_lon,SKA_core_lat,linewidth=4,marker='X',transform=ccrs.Geodetic())
-ax.plot(pointing_lon,pointing_lat,linewidth=4,marker='d',transform=ccrs.Geodetic())
-
-## Initializing For
-
-PSDrx = np.ones([len(time),int(N_sats)])*-500 
-alphaList = list()
-SKA_core_norm = np.linalg.norm(SKA_core_ECEF)
-Sat_norm = np.linalg.norm(A[0,0,:]) #all satellites are the same distance from the centre of the earth.
-SKA_core_vect = np.dot(np.reshape(np.array(SKA_core_ECEF),[3,1]),np.ones([1,N_sats]))
-
-# ==================== DEBUG
-#N_steps = 1  # force the time steps to one.
-
-# ==================== DEBUG
+plot_direction =1
+if plot_direction:
+    pointing = [45,90]*u.deg #  elevation, Azumith
     
-g_list1 = list()
-for i in range(N_steps):
-    D = np.transpose(A[:,i,:])-SKA_core_vect
-    D_norm = np.linalg.norm(D,axis=0)*u.km
-    index = np.where(D_norm<2700*u.km)[0].astype('int32')
     
-    FSPL = Free_space(D_norm[index].to('m'),freq.to('MHz'))
+    # transform the pointing direction to the ECEF frame
+    pointingENU = np.array(Pointing_to_ENU(pointing[0],pointing[1]))
+    T = ENU_to_ECEF(SKA_core_lat,SKA_core_lon) 
+    pointingECEF = np.matmul(T,pointingENU) #unit vector
     
-    Point_vect = np.dot(np.reshape(np.array(pointingECEF),[3,1]),np.ones([1,len(index)]))
-    cos_alpha1 = ((Point_vect*D[:,index]).sum(0)/D_norm[index].value)    
-
-    alpha = np.arccos(cos_alpha1)*180/np.pi
     
-    alphaList.append(alpha)
-    [blk, G_SKA] = antenna_gain(alpha)
-
-    satLon1,satLat1,alt = pyproj.transform(ecef,lla,A[index,i,0]*1e3,A[index,i,1]*1e3,A[index,i,2]*1e3)
-    ax.scatter(satLon1,satLat1,s=10,c = 10**(G_SKA/10),transform=ccrs.Geodetic(),cmap='jet',alpha=1)    
-#    ax.scatter(satLon1,satLat1,s=10,c =(1-alpha/90),transform=ccrs.Geodetic(),cmap='jet',alpha=1)    
-
-    g_list1.append(G_SKA)
-    print('Calculating received power, completed: %.2f'%(i/N_steps*100))
-    PSDrx[i,index] = EIRP_Hz + 30 - FSPL + G_SKA + G_sat_sidelobes #30 is to pass EIRP to dBm/Hz 
-
-plt.title('Angle distribution- pointing: elev= %.2f  Az= %.2f '%(pointing[0].value,pointing[1].value))
-
-PSDrx_t = 10*np.log10(np.sum(10**(PSDrx/10),1)) # sum of all the satellites contributions for each timestep
     
-
-#SKA_std = RFI.SKA_EMIEMC_std(freq,freq,20,0)
-
-plt.figure()
-plt.plot(time,PSDrx_t)
-plt.title('Equivalent PSD received every %d seconds'%(step))
-plt.ylabel('dBm/Hz')
-
-plt.figure()
-plt.plot(time,PSDrx_t + 10*np.log10(BW_ch))
-plt.title('Power received every %d seconds in 250 MHz BW'%(step))
-plt.ylabel('dBm')
-plt.plot([time[0],time[-1]],[-90,-90])
-
-
-Prx = PSDrx_t + 10*np.log10(250*MHz)
-count = np.sum(np.array(Prx > (P_saturation)).astype('int'))
-time_perc = count/len(Prx)*100
-print('Percentage of the time the power is above the integrated noise power: %d %%'%(time_perc))
-
-
-#%% Creating a grid in the sky:
-
-SKA_core_vect = np.dot(np.reshape(np.array(SKA_core_ECEF),[3,1]),np.ones([1,N_sats]))
-T = ENU_to_ECEF(SKA_core_lat,SKA_core_lon) 
-
-elev_step = 10
-elev = np.linspace(elev_step,elev_max.value,int((elev_max.value-elev_min.value)/elev_step))*u.deg
-N_elev = len(elev)
-PSD_rx = list()
-el = list()
-az = list()
-
-
-for i in range(len(elev)):
-    width = np.array(90/N_elev/np.cos(elev[i]*np.pi/180)).astype('int32')
-    Az = (np.linspace(-180,180,int(360/width)))*u.deg
-   
-    for j in range(len(Az)):
-        psd_rx = received_power(SKA_core_vect,T,elev[i],Az[j],A)
-        PSD_rx.append(psd_rx)
-        el.append(elev[i])
-        az.append(Az[j])
-        print('Calculating El: %s  - Az: %s'%(elev[i],Az[j]))
+    pointing_lat,pointing_lon = ENU_to_latlon(pointingECEF*(Re.value+550e3))
+    # PLot the distribution of the satelites with the GAin as colors
+    fig = plt.figure(figsize=[15,8])
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    ax.stock_img()
     
-
-
-
-
-#%%        
-#generate the grid to plot
-el2 = np.zeros(len(el))
-az2 = np.zeros(len(az))
-for i in range(len(el)):
-    el2[i] = el[i].value        
+    #SKA_core_lon,SKA_core_lat,alt = pyproj.transform(ecef,lla,SKA_core_ECEF[0]*1e3,SKA_core_ECEF[1]*1e3,SKA_core_ECEF[2]*1e3)
+    ax.plot(SKA_core_lon,SKA_core_lat,linewidth=4,marker='X',transform=ccrs.Geodetic())
+    ax.plot(pointing_lon,pointing_lat,linewidth=4,marker='d',transform=ccrs.Geodetic())
     
-for i in range(len(az)):
-    az2[i] = az[i].value        
+    ## Initializing For
     
-y = np.array(el2)
-x = np.array(az2)
-z = np.array(PSD_rx+10*np.log10(BW_ch))
- 
-
-import matplotlib.tri as mtri
-
-triang = mtri.Triangulation(x, y)
-
-fig = plt.figure()
-ax = fig.add_subplot(1,1,1,projection='3d')
-
-ax.plot_trisurf(triang, z, cmap='jet')
-
-ax.view_init(elev=90, azim=-90)
-
-ax.set_xlabel('Azimuth')
-ax.set_ylabel('Elevation')
-ax.set_zlabel('Averaged power dBm ')
-
-plt.show()
-
+    PSDrx = np.ones([N_steps,int(N_sats)])*-500 
+    alphaList = list()
+    SKA_core_norm = np.linalg.norm(SKA_core_ECEF)
+    Sat_norm = np.linalg.norm(A[0,0,:]) #all satellites are the same distance from the centre of the earth.
+    SKA_core_vect = np.dot(np.reshape(np.array(SKA_core_ECEF),[3,1]),np.ones([1,N_sats]))
+    
+    # ==================== DEBUG
+    #N_steps = 1  # force the time steps to one.
+    
+    # ==================== DEBUG
+        
+    g_list1 = list()
+    for i in range(N_steps):
+        D = np.transpose(A[0,:,i,:])-SKA_core_vect
+        D_norm = np.linalg.norm(D,axis=0)*u.km
+        index = np.where(D_norm<2700*u.km)[0].astype('int32')
+        
+        FSPL = Free_space(D_norm[index].to('m'),freq.to('MHz'))
+        
+        Point_vect = np.dot(np.reshape(np.array(pointingECEF),[3,1]),np.ones([1,len(index)]))
+        cos_alpha1 = ((Point_vect*D[:,index]).sum(0)/D_norm[index].value)    
+    
+        alpha = np.arccos(cos_alpha1)*180/np.pi
+        
+        alphaList.append(alpha)
+        [blk, G_SKA] = antenna_gain(alpha)
+    
+        satLon1,satLat1,alt = pyproj.transform(ecef,lla,A[0,index,i,0]*1e3,A[0,index,i,1]*1e3,A[0,index,i,2]*1e3)
+        ax.scatter(satLon1,satLat1,s=10,c = 10**(G_SKA/10),transform=ccrs.Geodetic(),cmap='jet',alpha=1)    
+    #    ax.scatter(satLon1,satLat1,s=10,c =(1-alpha/90),transform=ccrs.Geodetic(),cmap='jet',alpha=1)    
+    
+        g_list1.append(G_SKA)
+        print('Calculating received power, completed: %.2f'%(i/N_steps*100))
+        PSDrx[i,index] = EIRP_Hz + 30 - FSPL + G_SKA + G_sat_sidelobes #30 is to pass EIRP to dBm/Hz 
+    
+    plt.title('Angle distribution- pointing: elev= %.2f  Az= %.2f '%(pointing[0].value,pointing[1].value))
+    
+    PSDrx_t = 10*np.log10(np.sum(10**(PSDrx/10),1)) # sum of all the satellites contributions for each timestep
+        
+    
+    #SKA_std = RFI.SKA_EMIEMC_std(freq,freq,20,0)
+    time = np.linspace(0,step*N_steps,N_steps)
+    plt.figure()
+    plt.plot(time,PSDrx_t)
+    plt.title('Equivalent PSD received every %d seconds'%(step))
+    plt.ylabel('dBm/Hz')
+    
+    plt.figure()
+    plt.plot(time,PSDrx_t + 10*np.log10(BW_ch))
+    plt.title('Power received every %d seconds in 250 MHz BW'%(step))
+    plt.ylabel('dBm')
+    plt.plot([time[0],time[-1]],[-90,-90])
+    
+    
+    Prx = PSDrx_t + 10*np.log10(250*MHz)
+    count = np.sum(np.array(Prx > (P_saturation)).astype('int'))
+    time_perc = count/len(Prx)*100
+    print('Percentage of the time the power is above the integrated noise power: %d %%'%(time_perc))
+    

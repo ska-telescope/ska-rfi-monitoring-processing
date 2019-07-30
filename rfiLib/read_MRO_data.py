@@ -9,16 +9,16 @@ import os, os.path
 import numpy as np
 from astropy.io import fits
 
-def read_MRO_data(indir,outdir,ext='.fits'):
+def read_MRO_data(indir,outdir,ext='.fits',freq_points=29801,time_points = 680, ):
     # use ext = '.fits' if the files are decompressed
     # use ext = '.gz' if files are compressed (significantly more time)
     # this function does read ALL the files inside the input directory.
     
     files = os.listdir(indir)
-    freq_points = 29801
+#    freq_points = 29801
     data = np.zeros([0,freq_points]).astype('float32')
 #    data_file = np.zeros([0,freq_points]).astype('float32')
-    data_file = np.zeros([680,freq_points]).astype('float32')
+    data_file = np.zeros([time_points,freq_points]).astype('float32')
     N_files = np.size(files)
    
  
