@@ -25,7 +25,7 @@ import subprocess
 
 maskFreq =[20, 22, 25, 27.5, 31, 34.1, 37.2, 47.2,
            55.8, 59.5, 60, 70, 75.6, 79, 80, 83, 87,
-           92, 94, 103, 110, 117, 119.5, 133, 136,
+           92, 94, 103, 110, 117, 119.5, 127.8, 133, 136,
            140, 144, 149, 151, 155, 159,
            159.4, 162, 163, 165, 167, 169, 171, 173,
            175, 177, 179, 181, 183, 185, 187,189, 191, 
@@ -296,7 +296,7 @@ while selection != '0':
         print('Calculating occupancy...')
         title = 'Occupancy_'+ time_freq
 #        Normalized, S_occupancy =  RFI.spectral_occupancy(freqs,D,outdir,title,3)
-        S_occupancy = occupancy(freqs,maskFreq,10**(D/10),2,plot_figs =1)
+        S_occupancy = occupancy(freqs,maskFreq,10**(D/10),1.5,plot_figs =1)
 
 #        threshold = int(input('Calculate BW loss greater than (percent of the time):  '))
         threshold = (1,2,5,10,30,50,80,90,100)
