@@ -86,6 +86,7 @@ def occupancy(freq,maskFreq,D,sigma_mult,plot_figs =0):
         plt.xlabel('Freq Mhz')
         plt.ylabel('log ADC units')
         
+        
         plt.figure(figsize = [15,10])
         ax = plt.axes()
         ax.plot(freq,10*np.log10(mask),label = 'mask')
@@ -93,13 +94,15 @@ def occupancy(freq,maskFreq,D,sigma_mult,plot_figs =0):
         plt.legend()
         plt.xlabel('Freq Mhz')
         plt.ylabel('log ADC units')
+        plt.savefig(outdir+ 'Average_occup_mask_'+ time_freq , dpi=600, bbox_inches='tight')
         
         plt.figure(figsize = [15,10])
         ax = plt.axes()
         ax.plot(freq,occupancy*100/nTime)
-        plt.title('occupancy')
+        plt.title('Occupancy')
         plt.xlabel('Freq Mhz')
-        plt.ylabel('occupancy % of time')
+        plt.ylabel('Occupancy % of time')
+        plt.savefig(outdir+ 'Occupancy_'+ time_freq , dpi=600, bbox_inches='tight')
         
     return occupancy*100/nTime
 
