@@ -66,7 +66,7 @@ def occupancy(freq,maskFreq,D,sigma_mult,plot_figs =0):
     
     
     
-    mask = mask_ave+mask_sigma*sigma_mult
+    mask = mask_ave*sigma_mult
     
     #for each timestep the flags are calculated and added to the occupancy vector.
     navg = 10
