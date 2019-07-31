@@ -61,20 +61,15 @@ def partition(signal,max_len, func1, func2= idle_fun):
     except:
         m = 1
         n = len(signal)
-
+    data = np.ndarray([m,int(n/2)])
     if (m*n >  max_len) & (m>1): 
         steps = int(m*n/max_len)
         N_step = int(m/steps)
         for i in range(steps):
-            A = func2(func1(signal[int(i*N_step):int((i+1)*N_step),:]))
-            if i ==0:
-                data = A
-            else:
-                data = np.concatenate((data,A))
+            data[int(i*N_step):int((i+1)*N_step),:] = func2(func1(signal[int(i*N_step):int((i+1)*N_step),:]))
             print(str(i+1)+' of '+str(steps)+' steps in partition')
         if m > (i+1)*N_step:
-            A = func2(func1(signal[int((i+1)*N_step)::,:]))
-            data = np.concatenate((data,A))
+            data[int((i+1)*N_step)::,:] = func2(func1(signal[int((i+1)*N_step)::,:]))
     else:
         data= func2(func1(signal))
     return data
