@@ -25,7 +25,7 @@ import subprocess
 
 maskFreq =[20, 22, 25, 27.5, 31, 34.1, 37.2, 47.2,
            55.8, 59.5, 60, 70, 75.6, 79, 80, 83, 87,
-           92, 94, 103, 110, 117, 119.5, 
+           92, 94, 103, 110, 117, 119.5, 133, 136,
            140, 144, 149, 151, 155, 159,
            159.4, 162, 163, 165, 167, 169, 171, 173,
            175, 177, 179, 181, 183, 185, 187,189, 191, 
@@ -91,6 +91,8 @@ def occupancy(freq,maskFreq,D,sigma_mult,plot_figs =0):
         ax = plt.axes()
         ax.plot(freq,10*np.log10(mask),label = 'mask')
         ax.plot(freq,10*np.log10(ave),label = 'average')
+        ax.scatter(maskFreq,10*np.log10(np.interp(maskFreq,freq,ave)),label = 'mask points in average')
+        plt.xlim([freq[0],freq[-1]])
         plt.legend()
         plt.xlabel('Freq Mhz')
         plt.ylabel('log ADC units')
