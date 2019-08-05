@@ -350,7 +350,7 @@ elev_max = 90*u.deg
 
 totalTime = 6000
 totalHours = totalTime/3600 #total duration of the simulation
-N_steps = 1000
+N_steps = 60000
 step = totalTime/N_steps  # time step for the propagation of the satellites.
 
 #%% Generate the satellite constelation
