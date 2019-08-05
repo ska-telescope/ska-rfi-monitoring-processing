@@ -7,6 +7,15 @@ Created on Tue Jul 23 22:15:32 2019
 @author: f.divruno
 """
 
+#Commands to run in Ubuntu server:
+
+# tmux to use a deaachable console.
+# python3 to load the interactive python (so that the data remains in memory)
+# subprocess.run(["git","pull"]) #to use github pull
+# exec(open("./Satellite_received_power.py").read()) #to execute the script from the interactive python.
+
+
+
 
 
 from astropy import units as u
@@ -24,6 +33,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import cartopy.crs as ccrs
 import pyproj
 import os as os
+
 
 
 # Clear the screen
@@ -70,8 +80,8 @@ def rotation_matrix(axis, theta):
     Return the rotation matrix associated with counterclockwise rotation about
     the given axis by theta radians.
     '''
-    axis = np.asarray(axis)
-    axis = axis / math.sqrt(np.dot(axis, axis))
+#    axis = np.asarray(axis)
+#    axis = axis / math.sqrt(np.dot(axis, axis))
     a = math.cos(theta / 2.0)
     b, c, d = -axis * math.sin(theta / 2.0)
     aa, bb, cc, dd = a * a, b * b, c * c, d * d
@@ -183,18 +193,22 @@ def received_power(Rx_vect,T,Pointing_el,Pointing_az,A):
     pointingENU = np.array(Pointing_to_ENU(Pointing_el,Pointing_az))
     pointingECEF = np.matmul(T,pointingENU) #unit vector
     pointingECEF = np.reshape(np.array(pointingECEF),[3,1])
-    
+    Point_vect0 = np.dot(pointingECEF,np.ones([1,N_sats]))    
     PSDrx = np.ones([np.size(A,1),N_sats])*-500 
     A = np.transpose(A)  
-    for i in range(N_steps):
-        D = A[:,i,:] - Rx_vect
+    
+    for ind_Tstep in range(N_steps):
+        D = A[:,ind_Tstep,:] - Rx_vect
         D_norm = np.linalg.norm(D,axis=0)
         index = np.where(D_norm<2700)[0].astype('int32')
         
-        FSPL = Free_space((D_norm[index]*u.km).to('m'),freq.to('MHz'))
+        D_norm = D_norm[index]
         
-        Point_vect = np.dot(pointingECEF,np.ones([1,len(index)]))
-        cos_alpha1 = ((Point_vect*D[:,index]).sum(0)/D_norm[index])    
+        FSPL = Free_space((D_norm*u.km).to('m'),freq.to('MHz'))
+        
+#        Point_vect = np.dot(pointingECEF,np.ones([1,len(index)]))
+        Point_vect = Point_vect0[:,0:len(index)]
+        cos_alpha1 = ((Point_vect*D[:,index]).sum(0)/D_norm)    
         
         alpha = np.arccos(cos_alpha1)*180/np.pi
        
@@ -250,22 +264,21 @@ def propagate_orbits2(step,N_steps,sats,rand_seed=0):
         sats: list of satellite orbits
         
     '''
-    step_propagate = 500 # time step to propagate the trajectory.
+    step_propagate = 500 # coarse time step to propagate the trajectory.
     N_steps_propagate = int(step*N_steps/step_propagate)+1 #number of steps to propagate
     
     N_sats = len(sats)
     angle_vel = 2*np.pi/24/3600 #rad/sec
-    theta = 0
-    axis =[0,0,1] # Earth obliquity is 23deg, should this be considered?    
+    axis = np.array([0,0,1]) # Earth obliquity is 23deg, should this be considered?    
 
     np.random.seed(int(rand_seed))
-    rand_start = np.random.rand(1)*10*24*3600*u.s
-    theta0 = (rand_start.value)*angle_vel    
+    rand_start = np.random.rand(1)*10*24*3600*u.s#time in seconds for a random start, within 10 days of T0
+    theta0 = (rand_start.value)*angle_vel    # degreees of rotation of the earth
     
-    A = np.zeros([N_sats,N_steps,3])
+    A = np.zeros([N_sats,N_steps,3])    #array to contain the propagated satellites
 
-    t0 = np.linspace(0,N_steps_propagate*step_propagate,N_steps_propagate)
-    t1 = np.linspace(0,N_steps*step,N_steps)
+    t0 = np.linspace(0,N_steps_propagate*step_propagate,N_steps_propagate)  # time array to propagate the satellites
+    t1 = np.linspace(0,N_steps*step,N_steps)    #time array to interpolate the orbits with finer steps
     
     i=0    
     for sat in sats: #for each satellite
@@ -337,7 +350,7 @@ elev_max = 90*u.deg
 
 totalTime = 6000
 totalHours = totalTime/3600 #total duration of the simulation
-N_steps = 600
+N_steps = 1000
 step = totalTime/N_steps  # time step for the propagation of the satellites.
 
 #%% Generate the satellite constelation
@@ -395,81 +408,89 @@ k=0
 total = trials*len(el) #total number of itrations
 
 A = np.zeros([trials,N_sats,N_steps,3]) # variable to hold the coordinates of the sallites for each trial for each timestep
-for i in range(trials):
+for ind_trial in range(trials):
     rand_seed = np.random.rand(1)*100 #generate random seed for each trial, this makes the propagation to be in a random time.
-    A[i,:,:,:] = propagate_orbits2(step,N_steps,sats,rand_seed)  # propagate the orbits with a random seed  A= [trial, sat, time, xyz]
-    print('Propagating trial: %d of %d'%(i,trials))
-    for j in range(len(el)):  # for each pointing direction (el,az)
-        PSDrx[i,j,:] = received_power(SKA_core_vect,T,el[j],az[j],A[i,:,:,:])
+    A[ind_trial,:,:,:] = propagate_orbits2(step,N_steps,sats,rand_seed)  # propagate the orbits with a random seed  A= [trial, sat, time, xyz]
+    print('Propagating trial: %d of %d'%(ind_trial,trials))
+    for ind_el in range(len(el)):  # for each pointing direction (el,az)
+        PSDrx[ind_trial,ind_el,:] = received_power(SKA_core_vect,T,el[ind_el],az[ind_el],A[ind_trial,:,:,:]) #returns the received power for the jth pointing and ith trial for all the time steps.
         k+=1
         print('Received power completed: %.2f'%(k*100/total))    
 
+
+#%% Plot orbits in the full time calculated
+   # plot over the map with PLateeCarree projection.
+
+plot_Map = 1
+if plot_Map:    
+    fig = plt.figure(figsize=[15,10])
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    ax.stock_img()
+    total = N_steps*trials
+    k=0
+    col = list(['b','r'])
+    for ind_trial in range(1): #number of trials
+        for ind_sat in range(10): #number of steps
+
+            [_lon0,_lat0,_h0] = pyproj.transform(ecef,lla,A[ind_trial,ind_sat,0,0]*1e3,A[ind_trial,ind_sat,0,1]*1e3,A[ind_trial,ind_sat,0,2]*1e3)
+
+            [_lon,_lat,_h] = pyproj.transform(ecef,lla,A[ind_trial,ind_sat,:,0]*1e3,A[ind_trial,ind_sat,:,1]*1e3,A[ind_trial,ind_sat,:,2]*1e3) #plot all the timesteps for a the ith satellite.
+
+            ax.plot(_lon,_lat,'-o',color=col[ind_trial], linewidth=0.5,transform=ccrs.Geodetic())
+            ax.scatter(_lon0,_lat0,marker='x',color='r', linewidth=5,transform=ccrs.Geodetic())
+            print('Drawing trajectory, completed: %.2f'%(k/total*100))
+            k+=1
+
+
+
 #%% Calculate the average and the maximum values.
 PSDrx_linear = 10**(PSDrx/10)
-PSD_ave = 10*np.log10(np.sum(np.sum(PSDrx_linear,2),0)/total)
+
+PSD_ave = 10*np.log10(np.sum(np.sum(PSDrx_linear,2),0)/total) # dimmension 0 is the numbers of trials, dimmension 2 is the time steps
 PSD_max = 10*np.log10(np.max(np.max(PSDrx_linear,2),0))
 
 
 
 #%% plot the result
 
-for i in range(1):
- 
-    z = np.array(PSD_ave+10*np.log10(BW_ch))
+z = np.array(PSD_ave+10*np.log10(BW_ch))
+z = np.array(PSD_max+10*np.log10(BW_ch))
+
+#generate the grid to plot
+el2 = np.zeros(len(el))
+az2 = np.zeros(len(az))
+for i in range(len(el)):
+    el2[i] = el[i].value        
     
-    #generate the grid to plot
-    el2 = np.zeros(len(el))
-    az2 = np.zeros(len(az))
-    for i in range(len(el)):
-        el2[i] = el[i].value        
-        
-    for i in range(len(az)):
-        az2[i] = az[i].value        
-        
-    y = np.array(el2)
-    x = np.array(az2)
+for i in range(len(az)):
+    az2[i] = az[i].value        
     
-    
-    import matplotlib.tri as mtri
-    
-    triang = mtri.Triangulation(x, y)
-    
-    fig = plt.figure()
-    ax = fig.add_subplot(1,1,1,projection='3d')
-    
-    ax.plot_trisurf(triang, z, cmap='jet')
-    
-    ax.view_init(elev=90, azim=-90)
-    
-    ax.set_xlabel('Azimuth')
-    ax.set_ylabel('Elevation')
-    ax.set_zlabel('Ave power dBm ')
-    
-    plt.title('Received power in %d trials, %d steps of %.2f seg'%(trials,N_steps,step))
-    plt.show()
-    print('Saving figure of received power')
-    plt.savefig(outdir+ 'received_power_', dpi=600, bbox_inches='tight')                        
-    
+y = np.array(el2)
+x = np.array(az2)
 
 
-#%% Plot orbits in the full time calculated
-   # plot over the map with PLateeCarree projection.
+import matplotlib.tri as mtri
 
-plot_Map = 0
-if plot_Map:    
-    fig = plt.figure(figsize=[20,10])
-    ax = plt.axes(projection=ccrs.PlateCarree())
-    ax.stock_img()
-    total = N_steps*trials
-    k=0
-    col = list(['b','r'])
-    for j in range(trials):
-        for i in range(N_sats):
-            lon,lat,alt = pyproj.transform(ecef,lla,A[j,:,i,0]*1e3,A[j,:,i,1]*1e3,A[j,:,i,2]*1e3) #plot all sats
-#            lon,lat,alt = pyproj.transform(ecef,lla,A[j,20,i,0]*1e3,A[j,20,i,1]*1e3,A[j,20,i,2]*1e3) #plot only one sat
-            ax.scatter(lon,lat,color=col[j], linewidth=0.02,transform=ccrs.Geodetic())
-            print('Drawing trajectory, completed: %.2f'%(k/total*100))
-            k+=1
+triang = mtri.Triangulation(x, y)
+
+fig = plt.figure()
+ax = fig.add_subplot(1,1,1,projection='3d')
+
+ax.plot_trisurf(triang, z, cmap='jet')
+
+ax.view_init(elev=90, azim=-90)
+
+ax.set_xlabel('Azimuth')
+ax.set_ylabel('Elevation')
+ax.set_zlabel('Ave power dBm ')
+
+plt.title('Received power in %d trials, %d steps of %.2f seg'%(trials,N_steps,step))
+plt.show()
+print('Saving figure of received power')
+plt.savefig(outdir+ 'received_power_', dpi=600, bbox_inches='tight')                        
+
+
+
 
 
 #%% Calculate the agregated power as a function of time
