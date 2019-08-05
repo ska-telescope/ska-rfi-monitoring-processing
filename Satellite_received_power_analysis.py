@@ -23,6 +23,33 @@ from rfiLib.Pointing_DISH import *
 from mpl_toolkits.mplot3d import Axes3D
 import cartopy.crs as ccrs
 import pyproj
+import os as os
+
+
+# Clear the screen
+os.system('clear')
+
+if os.name == 'posix':
+    print('Using Ubuntu settings')
+    ubuntu = 1
+if os.name == 'nt':
+    print('Using Windows settings')
+    ubuntu = 0
+    
+#ubuntu = int(input('Select Ubuntu (1) or Windows (0) : '))
+
+if ubuntu:
+# in ubuntu
+    matplotlib.use('Agg')
+    plt.close('all')
+    outdir = r'/mnt/data/satellite_rx_power/output/'
+    indir = r'/mnt/data/satellite_rx_power/input/'
+else:
+# in windows
+    outdir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\13- Spectrum Management\\Oneweb - SpaceX starlink\\simulation\\output\\'
+    indir = 'C:\\Users\\F.Divruno\\Dropbox (SKA)\\13- Spectrum Management\\Oneweb - SpaceX starlink\\simulation\\input\\'
+
+#%%
 
 
 font = {'family' : 'DejaVu Sans',
@@ -68,7 +95,7 @@ def Generate_NGSO(height,inc,raan,nu,rand_seed=0):
     epoch = Time("2015-01-01 00:00:00", scale="tdb")
     
     np.random.seed(rand_seed)
-    epoch += np.random.random(1)*3600
+    epoch += np.random.random(1)*3600*u.s
     
     return Orbit.from_classical(Earth, a, ecc, inc, raan, argp, nu,epoch)
 
@@ -299,7 +326,7 @@ P_saturation = -90 #dBm
 freq = 11*u.GHz # np.linspace(fmin,fmax,20)
 
 #Number of trials
-trials = 100
+trials = 1
 
 #Pointing parameters
 elev_step = 2
@@ -310,7 +337,7 @@ elev_max = 90*u.deg
 
 totalTime = 6000
 totalHours = totalTime/3600 #total duration of the simulation
-N_steps = 150
+N_steps = 600
 step = totalTime/N_steps  # time step for the propagation of the satellites.
 
 #%% Generate the satellite constelation
@@ -322,9 +349,26 @@ for i in range(N_planes):
         print(i,k)
 
 # Plot the constellation:
-#        TODO:
-
-
+plot_orbits = 1
+if plot_orbits:
+    fig = plt.figure(figsize=[15,10])
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    ax.stock_img()        
+    _lon = np.zeros(len(sats))
+    _lat = np.zeros(len(sats))
+    _h = np.zeros(len(sats))
+    for i in range(len(sats)):
+        sat = sats[i]
+        [_lon[i],_lat[i],_h[i]] = pyproj.transform(ecef,lla,sat.r[0].value*1e3,sat.r[1].value*1e3,sat.r[2].value*1e3)
+    
+    ax.plot(_lon,_lat,'-o', linewidth=1,transform=ccrs.Geodetic())
+    
+    print('Saving figure of satellites orbits')
+    plt.xlabel('lat')
+    plt.ylabel('lon')
+    plt.grid()
+    plt.savefig(outdir+ 'satellites_orbits_', dpi=600, bbox_inches='tight')                        
+    
 #%% Calculate the grid points
 elev = np.linspace(elev_min.value,elev_max.value,int((elev_max.value-elev_min.value)/elev_step))*u.deg        
 N_elev = len(elev)
@@ -347,19 +391,18 @@ for i in range(len(elev)):
 #prepare the loop:
 PSDrx = np.ones([trials,len(el),N_steps])*-500 # received power for each trial in each pointing in each time step
 
-total = trials*len(el)
-k=0
-A = np.zeros([trials,N_sats,N_steps,3])
+k=0    
+total = trials*len(el) #total number of itrations
+
+A = np.zeros([trials,N_sats,N_steps,3]) # variable to hold the coordinates of the sallites for each trial for each timestep
 for i in range(trials):
-    rand_seed = np.random.rand(1)*100 #generate random seed
-    A[i,:,:,:] = propagate_orbits2(step,N_steps,sats,rand_seed)  # propagate the orbits with a random seed  
-    
+    rand_seed = np.random.rand(1)*100 #generate random seed for each trial, this makes the propagation to be in a random time.
+    A[i,:,:,:] = propagate_orbits2(step,N_steps,sats,rand_seed)  # propagate the orbits with a random seed  A= [trial, sat, time, xyz]
+    print('Propagating trial: %d of %d'%(i,trials))
     for j in range(len(el)):  # for each pointing direction (el,az)
         PSDrx[i,j,:] = received_power(SKA_core_vect,T,el[j],az[j],A[i,:,:,:])
-#        print('Trial: %d Calculating El: %s  - Az: %s'%(i,el[j],az[j]))
-        print('Received power completed: %.2f'%(k*100/total))
         k+=1
-    
+        print('Received power completed: %.2f'%(k*100/total))    
 
 #%% Calculate the average and the maximum values.
 PSDrx_linear = 10**(PSDrx/10)
@@ -404,13 +447,15 @@ for i in range(1):
     
     plt.title('Received power in %d trials, %d steps of %.2f seg'%(trials,N_steps,step))
     plt.show()
+    print('Saving figure of received power')
+    plt.savefig(outdir+ 'received_power_', dpi=600, bbox_inches='tight')                        
     
 
 
 #%% Plot orbits in the full time calculated
    # plot over the map with PLateeCarree projection.
 
-plot_Map = 1
+plot_Map = 0
 if plot_Map:    
     fig = plt.figure(figsize=[20,10])
     ax = plt.axes(projection=ccrs.PlateCarree())
@@ -418,8 +463,8 @@ if plot_Map:
     total = N_steps*trials
     k=0
     col = list(['b','r'])
-    for j in range(2):
-        for i in range(100):
+    for j in range(trials):
+        for i in range(N_sats):
             lon,lat,alt = pyproj.transform(ecef,lla,A[j,:,i,0]*1e3,A[j,:,i,1]*1e3,A[j,:,i,2]*1e3) #plot all sats
 #            lon,lat,alt = pyproj.transform(ecef,lla,A[j,20,i,0]*1e3,A[j,20,i,1]*1e3,A[j,20,i,2]*1e3) #plot only one sat
             ax.scatter(lon,lat,color=col[j], linewidth=0.02,transform=ccrs.Geodetic())
@@ -429,7 +474,7 @@ if plot_Map:
 
 #%% Calculate the agregated power as a function of time
 # Consier case of SKA-MID pointing to zenith and  the NGSO not pointing to SKA antenna
-plot_direction =1
+plot_direction =0
 if plot_direction:
     pointing = [45,90]*u.deg #  elevation, Azumith
     
