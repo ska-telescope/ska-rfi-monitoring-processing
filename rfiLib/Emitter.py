@@ -6,6 +6,7 @@ Created on Thu Jun 20 23:49:59 2019
 """
 import numpy as np
 import astropy.coordinates as Coord
+import astropy.units as u
 
 from rfiLib.Signal import Signal
 
@@ -22,7 +23,7 @@ k_bolt = 1.38e-23
 class Emitter():
     #Generate emitter object
     
-    def __init__(self,Name,Emit_type,Pos_ini, duration,SampleRate,position_params,random_seed=[],forceSignals=0):
+    def __init__(self,Name,Emit_type,Pos_ini, duration,SampleRate,position_params,DME_freq=[],random_seed=1,forceSignals=0):
         #Initializaition:
         self.Duration = duration
         self.Name = Name
@@ -37,8 +38,12 @@ class Emitter():
             self.Signals = list()
             DME_power = 60 #dBm = 1kW
             ADSB_power = 53 #dBm = 250W
-            np.random.seed(int(self.randomSeed*100)) #loads the seed in case of wanting to repeat the same signal.
-            freqDme = (np.random.random(1)-0.5)*62.5 + 1087.5 #DME frequencies for tx airplane : 1025-1150MHz
+            if DME_freq != []:
+                np.random.seed(int(self.randomSeed*100)) #loads the seed in case of wanting to repeat the same signal.
+                freqDme = (np.random.random(1)-0.5)*62.5 + 1087.5 #DME frequencies for tx airplane : 1025-1150MHz
+            else:
+                freqDme = DME_freq.to(u.MHz).value
+                    
             self.Signals.append(Signal('DME',self.Duration,self.SampleRate,freqDme*MHz,DME_power,0,self.randomSeed,self.forceSignals))
             self.Signals.append(Signal('ADS-B',self.Duration,self.SampleRate,1090*MHz,ADSB_power,0,self.randomSeed*5,self.forceSignals))
         elif Emit_type == 'Sky':
