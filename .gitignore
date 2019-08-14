@@ -105,3 +105,6 @@ venv.bak/
 
 # Matlab .mat files
 *.mat
+
+#SRTM files (used to plot high res images)
+*.hgt
