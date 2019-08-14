@@ -12,7 +12,7 @@ Created on Tue Jul 23 22:15:32 2019
 # tmux to use a deaachable console.
 # python3 to load the interactive python (so that the data remains in memory)
 # subprocess.run(["git","pull"]) #to use github pull
-# exec(open("./Satellite_received_power.py").read()) #to execute the script from the interactive python.
+# exec(open("./Satellite_received_power_analysis.py").read()) #to execute the script from the interactive python.
 
 
 
@@ -455,23 +455,26 @@ triang = mtri.Triangulation(x, y)
 fig = plt.figure()
 ax = fig.add_subplot(1,1,1,projection='3d')
 
-ax.plot_trisurf(triang, z, cmap='jet')
+axTris = ax.plot_trisurf(triang, z, cmap='jet')
 
 ax.view_init(elev=90, azim=-90)
+
+cbarAx = fig.add_axes((0.75, 0.1, 0.02, 0.8))
+cbar = fig.colorbar(axTris,cax=cbarAx,orientation='vertical')
 
 ax.set_xlabel('Azimuth')
 ax.set_ylabel('Elevation')
 ax.set_zlabel('Ave power dBm ')
 
-plt.title('Received power in %d trials, %d steps of %.2f seg'%(trials,N_steps,step))
+plt.title('Received max power in %d trials, %d steps of %.2f seg'%(trials,N_steps,step))
 plt.show()
 print('Saving figure of received power')
-plt.savefig(outdir+ 'received_power_', dpi=600, bbox_inches='tight')                        
+plt.savefig(outdir+ 'received_power_max', dpi=600, bbox_inches='tight')                        
 
 
 
 #%% plot the time vector in one pointing
-elevation = 14
+elevation = 40
 azimuth = -106
 b = np.where((x>azimuth) & (y>elevation))[0]
 
@@ -482,7 +485,7 @@ fig = plt.figure()
 ax = fig.add_subplot(1,1,1)
 ax.plot(Pow_time)
 plt.title('Received power in time - El: %d  Az: %d'%(elevation, azimuth))
-
+plt.savefig(outdir+ 'received_power_time', dpi=600, bbox_inches='tight')  
 
 
 
