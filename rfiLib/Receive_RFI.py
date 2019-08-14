@@ -58,10 +58,12 @@ def Receive_RFI(Telescope_list, Emitter_list,Duration,SamplingRate,plot_flag=0):
             for k in range(len(Emitter_list[j].Signals)):
                 #Attenuate: Antenna gain is not included at the moment
                 Sig_aux = FSPL_times[i,j]*Emitter_list[j].Signals[k].data
-    
+                
                 Sig_aux = np.roll(Sig_aux,int(delay_emitter[i])) # the delay makes the signal arrive earlier to the receiver                
                 Telescope_list[i].Rx_signal += Sig_aux[0:total_samples]    
-            
+                
+                #added to calculate the maximum level at the antenna input:
+                print('Ant: %s - Emitter: %s - Max level at antenna input: %f uV'%(Telescope_list[i].Name,Emitter_list[j].Name,np.max(Sig_aux)*1e6))
             
 ##    print('chopping the received signals with max delay')
 #    for i in range(len(Telescope_list)):
