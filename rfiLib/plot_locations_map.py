@@ -15,9 +15,9 @@ import cartopy.crs as ccrs
 import astropy.units as u
 import numpy as np
 import pandas as pd
-
+import os
     
-def plot_locations_map(lonData,latData,centre=[],skaAntPosCsvFile='',mapsize=[5,5],scatter=1,outdir=''):
+def plot_locations_map(lonData,latData,tx_name,centre=[],skaAntPosCsvFile='',mapsize=[5,5],scatter=1,outdir=''):
     '''
         description: plots the locations of culprits on a map and the locations of SKA anennas.
         inputs:
@@ -29,9 +29,16 @@ def plot_locations_map(lonData,latData,centre=[],skaAntPosCsvFile='',mapsize=[5,
     '''
     try:
         from pycraf import pathprof
-        pathprof.SrtmConf.set(download='missing', server='viewpano')
         from pycraf.pathprof import SrtmConf
-        SrtmConf.set(srtm_dir='SRTMdata')
+        
+        SrtmConf.set(download='missing', server='viewpano')
+        try:
+            os.mkdir('SRTMdata_temp')
+        except:
+            blk=1
+            
+        SrtmConf.set(srtm_dir='SRTMdata_temp')
+        
         have_pycraf = 1
         print('Pycraf installed, plotting high res map')
     except:
@@ -50,7 +57,7 @@ def plot_locations_map(lonData,latData,centre=[],skaAntPosCsvFile='',mapsize=[5,
         lonCent = centre[0]*u.deg 
         latCent = centre[1]*u.deg 
     
-#    have_pycraf = 0
+    have_pycraf = 0
     if have_pycraf:
         #get the heightmap information        
         map_size_lon, map_size_lat = mapsize[0] * u.deg, mapsize[1] * u.deg
@@ -91,17 +98,15 @@ def plot_locations_map(lonData,latData,centre=[],skaAntPosCsvFile='',mapsize=[5,
         ax.set_ylabel('Latitude [deg]')
         
         
-#        # Annotate the sites of interest in the map
-#        for site_id, site in sites.items():
-#            color = site.color
-#            color = 'k'
-#            ax.annotate(
-#                site.name, xy=site.coord, xytext=site.pixoff, 
-#                textcoords='offset points', color=color,
-#                arrowprops=dict(arrowstyle="->", color=color)
-#                )
-#            ax.scatter(site.coord[0], site.coord[1],marker='o', c='k')
-#        
+        # Annotate the sites of interest in the map
+        for i in range(len(tx_name)):
+            color = 'k'
+            ax.annotate(
+                tx_name[i], xy=np.array([lonData[i].to(u.deg).value,latData[i].to(u.deg).value]), xytext=[2,2], 
+                textcoords='offset points', color=color,
+                )
+            ax.scatter(lonData[i], latData[i],marker='o', c='r')
+        
         # set aspect ratio and limits of the image
         ax.set_aspect(abs(_lons[-1] - _lons[0]) / abs(_lats[-1] - _lats[0])) 
         ax.set_ylim([_lats[0],_lats[-1]])
@@ -109,15 +114,15 @@ def plot_locations_map(lonData,latData,centre=[],skaAntPosCsvFile='',mapsize=[5,
         
         
         # Place a marker in each of the SKA antennas in the map
-        for i in range(len(lonData)):
-            ax.scatter(lonData[i], latData[i],marker='o', c='r')
+#        for i in range(len(lonData)):
+#            ax.scatter(lonData[i], latData[i],marker='o', c='r')
             
         if plotSkaAnt:
             lonSka = np.array(skaAntPos['lon'])
             latSka = np.array(skaAntPos['lat'])
             ax.scatter(lonSka, latSka,marker='o', c='lightgreen')
             
-
+        
     else:
         lons = lonData.to(u.deg).value
         lats = latData.to(u.deg).value
@@ -131,6 +136,14 @@ def plot_locations_map(lonData,latData,centre=[],skaAntPosCsvFile='',mapsize=[5,
             latSka = np.array(skaAntPos['lat'])
             ax.scatter(lonSka, latSka,marker='o', c='green')
 
+
+        # Annotate the sites of interest in the map
+        for i in range(len(tx_name)):
+            color = 'k'
+            ax.annotate(
+                tx_name[i], xy=np.array([lonData[i].to(u.deg).value,latData[i].to(u.deg).value]), xytext=[2,2], 
+                textcoords='offset points', color=color,
+                )
         ax.scatter(lons,lats,marker='o',color='r', linewidth=3,transform=ccrs.Geodetic())        
 
         plt.xlim(np.array([-0.5*mapsize[0],0.5*mapsize[0]])+lonCent.to(u.deg).value)
