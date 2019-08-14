@@ -57,7 +57,7 @@ def plot_locations_map(lonData,latData,tx_name,centre=[],skaAntPosCsvFile='',map
         lonCent = centre[0]*u.deg 
         latCent = centre[1]*u.deg 
     
-    have_pycraf = 0
+#    have_pycraf = 0
     if have_pycraf:
         #get the heightmap information        
         map_size_lon, map_size_lat = mapsize[0] * u.deg, mapsize[1] * u.deg
