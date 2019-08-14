@@ -35,6 +35,8 @@ from rfiLib.Apply_DISH import Apply_DISH
 from rfiLib.General import saveAntInData, loadAntInData
 from rfiLib.General import saveAdcInData, loadAdcInData
 from rfiLib.General import saveAdcOutData, loadAdcOutData
+from rfiLib.plot_locations_map import plot_locations_map
+
 
 ms = 1e-3
 us = 1e-6
@@ -61,9 +63,15 @@ RFI Test case #1:
 testCaseName = 'test1'
 skaMidAntPosFileSpec = './skaMidAntPositions.csv'
 
+
+randomSeed = int(30)  # 
+maxDelay = 1e-3 *u.s#
+
+
 #antenna pair to test
 tstAnt1Key = 'SKA001'
 tstAnt2Key = 'SKA005'
+
 
 #antenna pointing az and el
 antAzEl = dict(Elev=90*u.deg,Azimuth=0*u.deg)
@@ -71,7 +79,7 @@ antAzEl = dict(Elev=90*u.deg,Azimuth=0*u.deg)
 #Receiver and temporal parameters
 Band = 'B2'
 Duration = 2.*ms
-SamplingRate = 4*GHz # THis is the analog sampling rate
+SamplingRate = 5*GHz # THis is the analog sampling rate
 #ADC scaling
 scaling = 'Correlator_opimized'
 
@@ -80,7 +88,7 @@ promptFlg = False #interactive mode prompts user at various processing steps
 runFlg = True #can be used to skip over processing
 saveFlg = True #results are saved if true
 loadFlg = False #results are loaded if true
-plot_signal = False #plot time series signal
+plot_signal = True #plot time series signal
 plot_spectrum = False #plot spectrum
 plot_corr = False   #plot correlation
           
@@ -98,19 +106,31 @@ skaMidAntPos = pd.read_csv(skaMidAntPosFileSpec, comment='#', index_col=0)
 #Generate the RFI sources or emitters:
 if((prompt('Generate RFI Sources [enter]?')=='') & runFlg):
     
-    rfiSrc1 = Emitter('FA204','Airplane',dict(height_i = 38000*FT2KM*u.km, lat_i = -31.8582*u.deg, lon_i=21.2375*u.deg), Duration, SamplingRate,[])
-    rfiSrc2 = Emitter('SA357','Airplane',dict(height_i = 36000*FT2KM*u.km, lat_i = -31.5685*u.deg, lon_i=21.6096*u.deg), Duration, SamplingRate,[])#
-    rfiSrc3 = Emitter('MN452','Airplane',dict(height_i = 37000*FT2KM*u.km, lat_i = -30.9916*u.deg, lon_i=21.6558*u.deg), Duration, SamplingRate,[])
-    rfiSrc4 = Emitter('MN429','Airplane',dict(height_i = 36000*FT2KM*u.km, lat_i = -31.0753*u.deg, lon_i=22.2323*u.deg), Duration, SamplingRate,[])
-    rfiSrc5 = Emitter('MN107','Airplane',dict(height_i = 38000*FT2KM*u.km, lat_i = -30.6617*u.deg, lon_i=22.7373*u.deg), Duration, SamplingRate,[])
-    rfiSrc6 = Emitter('FA102','Airplane',dict(height_i = 31875*FT2KM*u.km, lat_i = -30.3058*u.deg, lon_i=23.5510*u.deg), Duration, SamplingRate,[])
-    rfiSrc7 = Emitter('MN465','Airplane',dict(height_i = 36000*FT2KM*u.km, lat_i = -30.0115*u.deg, lon_i=22.5949*u.deg), Duration, SamplingRate,[])
-    rfiSrc8 = Emitter('KQ784','Airplane',dict(height_i = 38000*FT2KM*u.km, lat_i = -29.0371*u.deg, lon_i=21.2601*u.deg), Duration, SamplingRate,[])
-      
-    rfiSrcL = list([rfiSrc1,rfiSrc2])
-#    rfiSrcL = list([rfiSrc1,rfiSrc2, rfiSrc3, rfiSrc4, rfiSrc5, rfiSrc6, rfiSrc7, rfiSrc8])
+    rfiSrcL = list([])
+    rfiSrcL.append(Emitter('FA204','Airplane',dict(height_i = 38000*FT2KM*u.km, lat_i = -31.8582*u.deg, lon_i=21.2375*u.deg), Duration, SamplingRate,[],DME_freq=1103*u.MHz))
+    rfiSrcL.append(Emitter('SA357','Airplane',dict(height_i = 36000*FT2KM*u.km, lat_i = -31.5685*u.deg, lon_i=21.6096*u.deg), Duration, SamplingRate,[],DME_freq=1107*u.MHz))
+    rfiSrcL.append(Emitter('MN452','Airplane',dict(height_i = 37000*FT2KM*u.km, lat_i = -30.9916*u.deg, lon_i=21.6558*u.deg), Duration, SamplingRate,[],DME_freq=1112*u.MHz))
+    rfiSrcL.append(Emitter('MN429','Airplane',dict(height_i = 36000*FT2KM*u.km, lat_i = -31.0753*u.deg, lon_i=22.2323*u.deg), Duration, SamplingRate,[],DME_freq=1125*u.MHz))
+    rfiSrcL.append(Emitter('MN107','Airplane',dict(height_i = 38000*FT2KM*u.km, lat_i = -30.6617*u.deg, lon_i=22.7373*u.deg), Duration, SamplingRate,[],DME_freq=1135*u.MHz))
+    rfiSrcL.append(Emitter('FA102','Airplane',dict(height_i = 31875*FT2KM*u.km, lat_i = -30.3058*u.deg, lon_i=23.5510*u.deg), Duration, SamplingRate,[],DME_freq=1138*u.MHz))
+    rfiSrcL.append(Emitter('MN465','Airplane',dict(height_i = 36000*FT2KM*u.km, lat_i = -30.0115*u.deg, lon_i=22.5949*u.deg), Duration, SamplingRate,[],DME_freq=1141*u.MHz))
+    rfiSrcL.append(Emitter('KQ784','Airplane',dict(height_i = 38000*FT2KM*u.km, lat_i = -29.0371*u.deg, lon_i=21.2601*u.deg), Duration, SamplingRate,[],DME_freq=1147*u.MHz))
+    
+    print('Created RFI sources: ')
 
-    print('Created RFI sources: ' + rfiSrc1.Name + '  ' + rfiSrc2.Name)
+    # plot the SKA antennas and the emitters in a map
+    lon_tx = list()
+    lat_tx = list()
+    tx_name = list()
+    for a in rfiSrcL: 
+        lon_tx.append(a.Pos_ini['lon_i'].to(u.deg).value)
+        lat_tx.append(a.Pos_ini['lat_i'].to(u.deg).value)
+        tx_name.append(a.Name)
+    lon_tx = np.array(lon_tx)*u.deg
+    lat_tx = np.array(lat_tx)*u.deg
+    plot_locations_map(lon_tx,lat_tx,tx_name,skaAntPosCsvFile=skaMidAntPosFileSpec)
+    
+    
 else:
     raise SystemExit
 
@@ -142,9 +162,12 @@ else:
 
 #Generate the sky signal sources
 if((prompt('Generate Sky sources [enter]?')=='') & runFlg):
-    skySrc1 = Sky('Sky_source1', dict(lat= -31.340773 *u.deg,lon= 21.44*u.deg), SamplingRate, Duration, Temperature = 10)
-    skySrcL = list([skySrc1])
-    print('Created sky source: ' + skySrc1.Name)
+    
+    skySrcL = list()
+    
+    skySrcL.append(Sky('Sky_source1', dict(elev=70 *u.deg,az= 0*u.deg),antRxL[0].Pos, SamplingRate, Duration+maxDelay.value, Temperature = 20, random_seed=int(randomSeed*10)))
+#    skySrcL.append(Sky('Sky_source2', dict(elev=60 *u.deg,az= 0*u.deg),antRxL[0].Pos, SamplingRate, Duration+maxDelay.value, Temperature = 10, random_seed=int(randomSeed*20) ))
+    print('Created sky source')
 else:
     raise SystemExit
 
@@ -184,18 +207,17 @@ if loadFlg:
 
 if plot_signal:
     for antRx in antRxL:
-        antRx.plot_signal('Ant_in','RFI','abs')
-        antRx.plot_signal('ADC_in','RFI','abs')
-        antRx.plot_signal('ADC_out','RFI','abs')
-        
+        antRx.plot_signal('antIn','RFI','volt') #mode= absVolt, volt, powerLin, powerLog
+        antRx.plot_signal('adcIn','RFI','volt')
+        antRx.plot_signal('adcOut','RFI','volt') 
+#        antRx.plot_signal('adcOut','sky','volt') 
 
 
 if plot_spectrum:
     for antRx in antRxL:
-        antRx.plot_spectrum('Ant_in','RFI','abs')
-        antRx.plot_spectrum('ADC_in','RFI','abs')
-        antRx.plot_spectrum('ADC_out','RFI','abs')
-
+        antRx.plot_spectrum('antIn','RFI','power')
+        antRx.plot_spectrum('adcIn','RFI','power')
+        antRx.plot_spectrum('adcOut','RFI','power')
 
 #%% Verification of the results:
         
@@ -209,14 +231,13 @@ TO-DO:
 
 if plot_corr:
 #    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].Rx_signal)*np.conjugate(np.fft.fft(antRxL[1].Rx_signal))))
-    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].Rx_signal)*np.conjugate(np.fft.fft(antRxL[1].ADC_output_rx))))
+    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].ADC_output_rx)*np.conjugate(np.fft.fft(antRxL[1].ADC_output_rx))))
     plt.figure()
     plt.plot(Corr)
-    plt.title('Correlation of RFI + signal')
- 
+    plt.title('Correlation of RFI + signal, antennas: %s - %s'%(antRxL[0].Name,antRxL[1].Name))
+  
 #    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].sky_source_rx)*np.conjugate(np.fft.fft(antRxL[1].sky_source_rx))))
-    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].Rx_signal)*np.conjugate(np.fft.fft(antRxL[1].ADC_output_sky))))
+    Corr = abs(np.fft.ifft(np.fft.fft(antRxL[0].ADC_output_sky)*np.conjugate(np.fft.fft(antRxL[1].ADC_output_sky))))
     plt.figure()
     plt.plot(Corr)
-    plt.title('Correlation of intended signal')
-
+    plt.title('Correlation of intended signal output ADC, antennas: %s - %s'%(antRxL[0].Name,antRxL[1].Name))
