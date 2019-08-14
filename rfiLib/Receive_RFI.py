@@ -50,7 +50,7 @@ def Receive_RFI(Telescope_list, Emitter_list,Duration,SamplingRate,plot_flag=0):
 
     # apply the delay to each emitter on each receiver
     for j in range(len(Emitter_list)):
-        delay_emitter = delay_samples[:,j]-delay_samples[:,j].min() # calculate the differential delays
+        delay_emitter = delay_samples[:,j] - delay_samples[:,j].min() # calculate the differential delays
         # if there is a receiver with 0 delay, it must be delayed with max_delay, the receiver with the largest delay
         # gets the zero delay to be able to chop different parts of the same emitter
         delay_emitter -= delay_emitter.max()
@@ -64,6 +64,7 @@ def Receive_RFI(Telescope_list, Emitter_list,Duration,SamplingRate,plot_flag=0):
                 
                 #added to calculate the maximum level at the antenna input:
                 print('Ant: %s - Emitter: %s - Max level at antenna input: %f uV'%(Telescope_list[i].Name,Emitter_list[j].Name,np.max(Sig_aux)*1e6))
+                print('Ant: %s - Emitter: %s - Delay: %f us'%(Telescope_list[i].Name,Emitter_list[j].Name,np.abs(delay_emitter[i]/SamplingRate)*1e6))
             
 ##    print('chopping the received signals with max delay')
 #    for i in range(len(Telescope_list)):
@@ -78,3 +79,5 @@ def Receive_RFI(Telescope_list, Emitter_list,Duration,SamplingRate,plot_flag=0):
         Telescope_list[0].plot_spectrum('abs','RFI')
     
     return Telescope_list
+
+
