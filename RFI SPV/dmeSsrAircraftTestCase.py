@@ -78,7 +78,7 @@ scaling = 'Correlator_opimized'
 #Test configuration parameters
 promptFlg = False #interactive mode prompts user at various processing steps
 runFlg = True #can be used to skip over processing
-saveFlg = True #results are saved if true
+saveFlg = False #results are saved if true
 loadFlg = False #results are loaded if true
 plot_signal = False #plot time series signal
 plot_spectrum = False #plot spectrum
