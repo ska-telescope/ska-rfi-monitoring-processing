@@ -5,7 +5,7 @@ Created on Thu Jun 20 23:50:54 2019
 @author: f.divruno
 @revised: G. Hovey; added default parameters to initialize class
 @revised: G. Hovey; somehow a copy with antenna_gain unindented got into the repository causing class functions to disappear. Fix it.
-
+@revised: G. Hovey; changed height to 1000 u*m from zero (this needs to be a parameter)
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -32,7 +32,7 @@ class Receiver():
                                duration=.5*ms,SampleRate=4.*GHz,antSampleRate=3.96*GHz,\
                                band = 'B2'):
         self.band = band
-        self.height = 0
+        self.height = 1000 *u.m
         self.Name = Name
         self.lat = Position['Latitude']
         self.lon = Position['Longitude']
