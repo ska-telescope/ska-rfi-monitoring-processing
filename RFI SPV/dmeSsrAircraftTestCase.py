@@ -35,7 +35,7 @@ from rfiLib.Apply_DISH import Apply_DISH
 from rfiLib.General import saveAntInData, loadAntInData
 from rfiLib.General import saveAdcInData, loadAdcInData
 from rfiLib.General import saveAdcOutData, loadAdcOutData
-from rfiLib.plot_locations_map import plot_locations_map
+#from rfiLib.plot_locations_map import plot_locations_map
 
 
 ms = 1e-3
@@ -71,6 +71,9 @@ maxDelay = 1e-3 *u.s#
 #antenna pair to test
 tstAnt1Key = 'SKA001'
 tstAnt2Key = 'SKA005'
+#These two antennas are in the core and close together
+tstAnt1Key = 'SKA062'
+tstAnt2Key = 'SKA065'
 
 
 #antenna pointing az and el
@@ -128,7 +131,7 @@ if((prompt('Generate RFI Sources [enter]?')=='') & runFlg):
         tx_name.append(a.Name)
     lon_tx = np.array(lon_tx)*u.deg
     lat_tx = np.array(lat_tx)*u.deg
-    plot_locations_map(lon_tx,lat_tx,tx_name,skaAntPosCsvFile=skaMidAntPosFileSpec)
+    #plot_locations_map(lon_tx,lat_tx,tx_name,skaAntPosCsvFile=skaMidAntPosFileSpec)
     
     
 else:
