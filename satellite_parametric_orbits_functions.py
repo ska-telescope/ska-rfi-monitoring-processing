@@ -7,15 +7,16 @@ Created on Wed Sep 11 01:26:31 2019
 
 
 import numpy as np
-import astropy.units as u
+import pycraf as pycraf
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import cartopy.crs as ccrs
 import astropy.constants as const
-import pycraf.antenna as antenna
 import os as os
+import astropy.units as u
+from numba import jit
 
 #%% Functions 
 def antenna_gain_times(angle):
@@ -40,7 +41,7 @@ def antenna_gain_RA1631(angle,do_bessel=False):
     '''
     D = 14.5*u.m
     lda = 3e8/11e9*u.m
-    GdB = antenna.ras_pattern(angle*u.deg,D,lda,do_bessel=do_bessel).value
+    GdB = pycraf.antenna.ras_pattern(angle*u.deg,D,lda,do_bessel=do_bessel).value
     G = 10**(GdB/10)+1e-4
     return G
 
@@ -158,15 +159,18 @@ def create_orbits(N_planes=24, Sats_per_plane=66, orbit_incl=53*u.deg,
     steps = int(time_steps)
     t2 = np.linspace(t[0],t[-1],steps)    
     sat_pos = np.zeros([N_sats,steps,6]) #[az,alt,distance,x,y,z]
-    for i in range(N_sats):
-        sat_pos[i,:,3] = np.interp(t2,t,c_AltAz[i].cartesian.x)
-        sat_pos[i,:,4] = np.interp(t2,t,c_AltAz[i].cartesian.y)
-        sat_pos[i,:,5] = np.interp(t2,t,c_AltAz[i].cartesian.z)
-        sat_pos[i,:,0] = np.arctan2(sat_pos[i,:,4],sat_pos[i,:,3])*180/np.pi*u.deg
-        sat_pos[i,:,1] = np.arctan2(sat_pos[i,:,5],np.sqrt(sat_pos[i,:,3]**2+sat_pos[i,:,4]**2))*180/np.pi*u.deg
-        sat_pos[i,:,2] = np.sqrt(sat_pos[i,:,3]**2+sat_pos[i,:,4]**2+sat_pos[i,:,5]**2)
-        print('Interpolating sat num: ' + str(i))
-        
+    
+    # @jit(nopython=True, parallel=True)
+    def interpolation_sat():    
+        for i in range(N_sats):
+            sat_pos[i,:,3] = np.interp(t2,t,c_AltAz[i].cartesian.x)
+            sat_pos[i,:,4] = np.interp(t2,t,c_AltAz[i].cartesian.y)
+            sat_pos[i,:,5] = np.interp(t2,t,c_AltAz[i].cartesian.z)
+            sat_pos[i,:,0] = np.arctan2(sat_pos[i,:,4],sat_pos[i,:,3])*180/np.pi*u.deg
+            sat_pos[i,:,1] = np.arctan2(sat_pos[i,:,5],np.sqrt(sat_pos[i,:,3]**2+sat_pos[i,:,4]**2))*180/np.pi*u.deg
+            sat_pos[i,:,2] = np.sqrt(sat_pos[i,:,3]**2+sat_pos[i,:,4]**2+sat_pos[i,:,5]**2)
+            print('Interpolating sat num: ' + str(i))
+    interpolation_sat()        
     return sat_pos, c_AltAz
 
 
@@ -259,6 +263,8 @@ def receive_power2(EIRP,fo,sat_pos,el,az):
     visible_sats = np.unique(ind[0])
     
     Prx = np.zeros([len(el),time_steps])
+    
+
     for i in range(len(el)):
         # pointing in cartesian coords [3]
         Po = np.array([np.cos(az[i]*u.deg)*np.cos(el[i]*u.deg),np.sin(az[i]*u.deg)*np.cos(el[i]*u.deg), np.sin(el[i]*u.deg)])    
@@ -279,6 +285,7 @@ def receive_power2(EIRP,fo,sat_pos,el,az):
         
          
             #angle between pointing vector and position of the satellite in AltAz frame
+ 
             eff_alt = np.arccos(np.einsum('ij,ij->j', P, P_sats)) * 180 / np.pi
             
             # Linear gain
@@ -297,7 +304,6 @@ def receive_power2(EIRP,fo,sat_pos,el,az):
             Prx[i,time_ind] += Prx_sat
 
        
-        
         # calculate the maximum power in each timestep, is for debugging
 #        Prx_max_time = np.maximum(Prx_max_time, Prx)
                                   
@@ -309,10 +315,99 @@ def receive_power2(EIRP,fo,sat_pos,el,az):
         maxPrx[i] = np.max(Prx[i])
         
         print('Received power, point %d of %d' %(i,len(el)))    
-
 #    return Prx, Prx_time, avePrx, maxPrx
     return Prx,avePrx, maxPrx
 
+
+@jit(nopython=True,parallel=True)
+def offbeam_angle(ska_el,ska_az,sat_el,sat_az):
+    #angle between pointing vector and position of the satellite in AltAz frame
+    # angles need to be in radians
+    
+    CEa = np.cos(ska_el)
+    CAa = np.cos(ska_az)
+    SEa = np.sin(ska_el)
+    SAa = np.sin(ska_az)
+    CEb = np.cos(sat_el)
+    CAb = np.cos(sat_az)
+    SEb = np.sin(sat_el)
+    SAb = np.sin(sat_az)
+    
+    eff_alt = np.arccos(CEa*CAa*CEb*CAb+CEa*SAa*CEb*SAb+SEa*SEb)*180/np.pi
+    # eff_alt = np.arccos(np.einsum('ij,ij->j', P, P_sats)) * 180 / np.pi
+    return eff_alt
+
+def receive_power3(EIRP,fo,sat_pos,el,az):
+    '''
+        calculates the received power in the grid of pointings from el,az
+        input:
+            EIRP: in dBm
+            fo: centre frequency in astropy units
+            sat_pos: (sat index, time step, 6)
+            el: elevation array as numpy array 
+            az: az arrayas numpy array 
+            
+    '''
+    EIRP_lin = 10**(EIRP/10)
+    fo = fo.to(u.MHz).value
+    
+    steps = np.size(sat_pos,1)
+    
+    #prepare the loop
+    avePrx = np.zeros(len(el))
+    maxPrx = np.zeros(len(el))
+
+    
+    #To test with only one pointing
+    #el = np.array([ 32.7832])
+    #az = np.array([ 147.152])
+    
+    #looks for the time steps where the elevation is >=0
+    ind = np.where(sat_pos[:,:,1]>=0)
+    visible_sats = np.unique(ind[0])
+    
+    Prx = np.zeros([len(el),time_steps])
+    
+
+    for i in range(len(el)):
+        for sat_ind in visible_sats:
+            # Get the time indices where the satellite is visible
+            time_ind = ind[1][ind[0] == sat_ind]
+            
+            # generate vectors of pointing angles            
+            ska_el = np.ones(len(time_ind))*el[i]*np.pi/180
+            ska_az = np.ones(len(time_ind))*az[i]*np.pi/180
+            
+            # Distance in metres
+            d = sat_pos[sat_ind,time_ind,2]      
+        
+            # satellite versor in AzAlt frame, cartesian coords
+            sat_el = (sat_pos[sat_ind,time_ind,1])*np.pi/180
+            sat_az = (sat_pos[sat_ind,time_ind,0])*np.pi/180
+            
+            eff_alt = offbeam_angle(ska_el,ska_az,sat_el,sat_az)
+            
+            # Linear gain
+            G_lin = antenna_gain_RA1631(eff_alt,do_bessel=False)  
+
+            # FSPL in linear units
+            FSPL_lin = (d**2)*(fo**2)*0.0017579236139586931 # d in metres, fo in MHz
+            
+            #Power received from the satellite for each time step
+            Prx_sat = EIRP_lin * G_lin / FSPL_lin
+            
+            # Accumulate the received power from each satellite in each time step
+            Prx[i,time_ind] += Prx_sat
+       
+        print('Received power, point %d of %d' %(i,len(el)))    
+
+    # Average for all the time calculated
+    avePrx = np.sum(Prx,1)/steps
+    
+    # Maximum power in all the time considered
+    maxPrx = np.max(Prx,1)
+
+    return Prx,avePrx, maxPrx
 
 
 def plot_trimesh(el,az,Z,title='', view_el = 60, view_az = -90):
@@ -360,7 +455,7 @@ if __name__ == '__main__':
     max_time  = 3600*u.s #1*u.h
     time_steps = 4000
     N_planes = 24
-    Sats_per_plane = 66
+    Sats_per_plane = 66 
     RS = 5 # random seed for create_orbits
     
     el_min = 20*u.deg
@@ -388,7 +483,7 @@ if __name__ == '__main__':
         # Plot the orbits in the AltAz frame
         plot_orbit_AltAz(sat_pos)
         plt.title('Orbits'+identifier)
-        plt.savefig('..\satellite_results\Orbits in az el '+identifier+'-side.jpg')        
+        plt.savefig('../satellite_results/Orbits in az el '+identifier+'-side.png')        
         
         # plot the visible sats in a determined time
         #plot_visible_sats(sat_pos,indT=40)
@@ -400,34 +495,36 @@ if __name__ == '__main__':
         EIRP = EIRP_4kHz + 10*np.log10(250e6/4e3)
         
         #Calculate the received power
-        Prx, avePrx[i], maxPrx[i] = receive_power2(EIRP,11e9*u.Hz,sat_pos,el,az)
+        Prx, avePrx[i], maxPrx[i] = receive_power3(EIRP,11e9*u.Hz,sat_pos,el,az)
         
         
         
         # plot the received power in the sky
         blk,ax = plot_trimesh(el,az,maxPrx[i],'Maximum received power '+ identifier ,0,180)
-        plt.savefig('..\satellite_results\Max received power - full sky '+identifier+'-side.jpg')
+        plt.savefig('../satellite_results/Max received power - full sky '+identifier+'-side.png')
         ax.view_init(90,-90)
         plt.draw()
-        plt.savefig('..\satellite_results\Max received power - full sky '+identifier+'-front.jpg')
+        plt.savefig('../satellite_results/Max received power - full sky '+identifier+'-front.png')
                 
         blk,ax = plot_trimesh(el,az,avePrx[i], 'Average received power in %s'%(max_time)+ identifier ,0,180)
-        plt.savefig('..\satellite_results\Avg received power - full sky '+identifier+'-side.jpg')
+        plt.savefig('../satellite_results/Avg received power - full sky '+identifier+'-side.png')
         ax.view_init(90,-90)
         plt.draw()
-        plt.savefig('..\satellite_results\Avg received power - full sky '+identifier+'-front.jpg')
+        plt.savefig('../satellite_results/Avg received power - full sky '+identifier+'-front.png')
         
         #max in time domain:
         k = np.where(maxPrx[i]==np.max(maxPrx[i]))
         plot_rx_power_in_time(az[k],el[k],Prx)
-        plt.savefig('..\satellite_results\Instantaneous received power - el %.2f Az %.2f'%(el[k],az[k])+identifier+'.jpg')
+        plt.savefig('../satellite_results/Instantaneous received power - el %.2f Az %.2f'%(el[k],az[k])+identifier+'.png')
         
         #save the max and averaged power
-        files = os.listdir('..\satellite_results')
-        filename = '..\satellite_results\Satellites '+identifier
-        j=0
-        filename2 = filename + ' - ' + str(j)
-        while filename2 in files:
-            j+=1
-            filename2 =  filename + ' - ' + str(j)
-        np.savez(filename2,el=el,az=az,Prx=Prx,maxPrx=maxPrx[i],avePrx=avePrx[i])
+        savefile = 0
+        if savefile :
+            files = os.listdir('../satellite_results')
+            filename = '../satellite_results/Satellites '+identifier
+            j=0
+            filename2 = filename + ' - ' + str(j)
+            while filename2 in files:
+                j+=1
+                filename2 =  filename + ' - ' + str(j)
+            np.savez(filename2,el=el,az=az,Prx=Prx,maxPrx=maxPrx[i],avePrx=avePrx[i])
