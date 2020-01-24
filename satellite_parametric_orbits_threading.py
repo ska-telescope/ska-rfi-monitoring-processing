@@ -18,9 +18,89 @@ import os as os
 import astropy.units as u
 from numba import jit
 import concurrent
+import time
 
 
 #%% Functions 
+
+def ras_pattern(
+        phi, diameter, wavelength, eta_a=1
+        ):
+    '''
+    Antenna gain as a function of angular distance after `ITU-R Rec RA.1631
+    <https://www.itu.int/rec/R-REC-RA.1631-0-200305-I/en>`_.
+
+    Parameters
+    ----------
+    phi :  Angular distance from looking direction [deg]
+    diameter :  Antenna diameter [m]
+    wavelength :  Observing wavelength [m]
+    eta_a :  Antenna efficiency (default: 100%)
+
+    Returns
+    -------
+    gain : Antenna gain [linear]
+
+    Notes
+    -----
+    - See `ITU-R Rec. RA.1631-0
+      <https://www.itu.int/rec/R-REC-RA.1631-0-200305-I/en>`_ for further
+      explanations and applicability of this model.
+    '''
+    phi = np.abs(phi)
+    # eta_a = eta_a / 100.
+
+    # the following are independent on phi, no need to compute after broadcast
+    d_wlen = diameter / wavelength
+
+    # Note, we use the version that accounts for antenna efficiency
+    # see ITU radio astronomy handbook, page 50
+    # gmax = 20 * np.log10(np.pi * d_wlen)
+    gmax = 10 * np.log10(eta_a * (np.pi * d_wlen) ** 2)
+
+    g1 = -1. + 15. * np.log10(d_wlen)
+    phi_m = 20. / d_wlen * np.sqrt(gmax - g1)
+    phi_r = 15.85 * d_wlen ** -0.6
+
+    # note automatic broadcasting should be possible
+    # _tmp = np.broadcast(phi, _diam, _wlen)
+    (
+        phi, d_wlen, gmax, g1, phi_m, phi_r,
+        ) = np.broadcast_arrays(
+        phi, d_wlen, gmax, g1, phi_m, phi_r,
+        )
+    gain = np.zeros(phi.shape, np.float64)
+
+    # case 1:
+    mask = (0 <= phi) & (phi < phi_m)
+    gain[mask] = gmax[mask] - 2.5e-3 * (d_wlen[mask] * phi[mask]) ** 2
+
+    # case 2:
+    mask = (phi_m <= phi) & (phi < phi_r)
+    gain[mask] = g1[mask]
+
+    # case 3:
+    mask = (phi_r <= phi) & (phi < 10.)
+    gain[mask] = 29. - 25. * np.log10(phi[mask])
+
+    # case 4:
+    mask = (10. <= phi) & (phi < 34.1)
+    gain[mask] = 34. - 30. * np.log10(phi[mask])
+
+    # case 5:
+    mask = (34.1 <= phi) & (phi < 80.)
+    gain[mask] = -12.
+
+    # case 6:
+    mask = (80. <= phi) & (phi < 120.)
+    gain[mask] = -7.
+
+    # case 7:
+    mask = (120. <= phi) & (phi <= 180.)
+    gain[mask] = -12.
+
+    return 10**(gain/10)
+
 
 def create_orbits(N_planes=24,
                   Sats_per_plane=66,
@@ -166,7 +246,7 @@ def create_orbits(N_planes=24,
     t2 = np.linspace(t[0],t[-1],steps)    
     sat_pos = np.zeros([N_sats,steps,6]) #[az,alt,distance,x,y,z]
     
-    # @jit(nopython=True, parallel=True)
+    @jit
     def interpolation_sat():    
         for i in range(N_sats):
             sat_pos[i,:,3] = np.interp(t2,t,c_AltAz[i].cartesian.x)
@@ -176,6 +256,7 @@ def create_orbits(N_planes=24,
             sat_pos[i,:,1] = np.arctan2(sat_pos[i,:,5],np.sqrt(sat_pos[i,:,3]**2+sat_pos[i,:,4]**2))*180/np.pi*u.deg
             sat_pos[i,:,2] = np.sqrt(sat_pos[i,:,3]**2+sat_pos[i,:,4]**2+sat_pos[i,:,5]**2)
             print('Interpolating sat num: ' + str(i))
+            
     interpolation_sat()        
     return sat_pos, c_AltAz
 
@@ -211,7 +292,7 @@ def generate_az_el_grid(el_min=15*u.deg,el_max=90*u.deg,el_step=1*u.deg):
 
 
 
-@jit(nopython=True,parallel=True)
+@jit
 def offbeam_angle(ska_el,ska_az,sat_el,sat_az):
     # angle between pointing vector and position of the satellite in AltAz frame
     # angles need to be in radians
@@ -247,12 +328,26 @@ def receive_power_threading(chunk):
             chunk: index of the portion of the vector el to calculate
             
     '''
-    EIRP_lin = 1 # mW
-    fo = 11000 # MHz
-    fo = fo
-    fo_2 = (fo**2)*0.0017579236139586931 #constant to use in FSPL calculation in linear units
-    lda = (3e8/11e9)*u.m
-    D = 14.5*u.m
+    #Radiated power
+    # instead of using the EIRP and calculating the spreading loss
+    # the PFD from FCC filings is considered , this takes into account the
+    # shape of the beam, ie between -65 to 65 deg (0 is nadir position from 
+    # the satellite) the PFD is -146 dBW/m2
+    # then considering the SKA antenna gain and the frequency th PRx is calc
+    #    EIRP_dBW_Hz = -49.4 #dBW/Hz
+    #    EIRP_dBm_Hz = EIRP_dBW_Hz + 30 # dBm/Hz
+    #    #in 250 MHz channel
+    #    EIRP = EIRP_dBm_Hz + 10*np.log10(250e6)
+    #    EIRP_lin = 10**(EIRP/10) # in mW
+
+    # because   Prx = PFD*Aeff
+    #           Prx = PFD*G*lda**2/(4pi)
+    #           Prx = G * (PFD*lda**2/4/pi)
+    #           Prx = G * Pow_const (not considering the change in freq of different channels)
+    Pow_const = 10**(Pfd_CH/10)*(3e8/fo)**2/(4*np.pi)
+        
+    lda = (3e8/fo) #m
+    D = 14.5 # m
     
     time_steps = np.size(sat_pos,1)
     
@@ -270,7 +365,7 @@ def receive_power_threading(chunk):
     #prepare the loop
     avePrx = np.zeros(len(el2))
     maxPrx = np.zeros(len(el2))
-    print('\nElevation vector in thread %d =  %d'%(chunk,len(el2)))
+    print('\nElevation vector in thread %d  %d'%(chunk,len(el2)))
     
     #looks for the time steps where the elevation is >=0
     ind = np.where(sat_pos[:,:,1]>=0)
@@ -280,41 +375,41 @@ def receive_power_threading(chunk):
     
     ind_1 = ind[1]
     ind_0 = ind[0]
-    ones = np.ones(time_steps)
+
+
+   
     for i in range(len(el2)):
-        el_deg = el2[i]*np.pi/180
-        az_deg = az2[i]*np.pi/180
+        el_rad = el2[i]*np.pi/180
+        az_rad = az2[i]*np.pi/180
+        start = time.time()
+
         for sat_ind in visible_sats:
             # Get the time indices where the satellite is visible
             time_ind = ind_1[ind_0 == sat_ind]
             
-            # generate vectors of pointing angles            
-            ska_el = ones[0:len(time_ind)]*el_deg
-            ska_az = ones[0:len(time_ind)]*az_deg
-            
-       
+
             # satellite versor in AzAlt frame, cartesian coords
             sat_el = (sat_pos[sat_ind,time_ind,1])*np.pi/180
             sat_az = (sat_pos[sat_ind,time_ind,0])*np.pi/180
             
-            eff_alt = offbeam_angle(ska_el,ska_az,sat_el,sat_az)
+            eff_alt = offbeam_angle(el_rad,az_rad,sat_el,sat_az)
             
             # Linear gain
-            GdB = pycraf.antenna.ras_pattern(eff_alt*u.deg,D,lda,do_bessel=False).value
-            G_lin = 10**(GdB/10)
-            #G_lin = np.ones(len(eff_alt))
+#            GdB = pycraf.antenna.ras_pattern(eff_alt*u.deg,D,lda,do_bessel=False).value
+#            G_lin = 10**(GdB/10)
+            G_lin = ras_pattern(eff_alt,D, lda)
 
-            # FSPL in linear units
-            FSPL_lin = ((sat_pos[sat_ind,time_ind,2])**2)*fo_2 # d in metres, fo in MHz
-            
             #Power received from the satellite for each time step
-            Prx_sat = EIRP_lin * G_lin / FSPL_lin
+            # power const is (S*lda^2/(4pi))
+            # Considering S = constant as the highest value from FCC filings
+            Prx_sat = G_lin  #* Pow_const this constant is taken out of the loop
             
             # Accumulate the received power from each satellite in each time step
             Prx[i,time_ind] += Prx_sat
             
-        print('\nReceived power, point %d of %d' %(i,len(el2)))#, end="\r", flush=True)        
-        
+        Prx[i,:] *= Pow_const
+        end = time.time()
+        print('\nThread loop time: %.3f sec,  total thread time: %.2f min' %(end-start,(end-start)*len(el2)/60))        
     # Average for all the time calculated
     avePrx = np.sum(Prx,1)/time_steps
     
@@ -350,20 +445,23 @@ def plot_orbit_AltAz(sat_pos, plot_all=False, AzPoint=0, AltPoint=0):
     
 
 
-def plot_visible_sats(sat_pos,indT=40):
+def plot_visible_sats(sat_pos,indT=40,figure=[]):
     
     ind = np.where(sat_pos[:,indT,1]>=0)[0]
 
-    plt.figure()
+    if figure != []:
+        plt.figure(figure)
+    else:
+        plt.figure()
     plt.plot(sat_pos[ind,indT,0],sat_pos[ind,indT,1],'o')
-    plt.title('visible satellites in time index : ' + str(indT))
+    plt.title('Visible satellites in time index : ' + str(indT) +'- number of visible sats: '+ str(len(ind)))
     plt.xlabel('Azimuth')
     plt.ylabel('Altitude')
     
-    plt.figure()
-    plt.plot(sat_pos[ind,indT,2],'o')
-    plt.title('distance to visible satellites in time index : ' + str(indT))
-    plt.ylabel('Distance in km')
+#    plt.figure()
+#    plt.plot(sat_pos[ind,indT,2],'o')
+#    plt.title('distance to visible satellites in time index : ' + str(indT))
+#    plt.ylabel('Distance in km')
     
     print('Number of visible satellites in %d is: %d'%(indT,len(ind)))
     
@@ -408,28 +506,59 @@ def plot_rx_power_in_time(Point_az, Point_el, Prx_time,fig=[]):
 
 
 #%% Start rhe calculation
+Results_folder = 'C:/Users/f.divruno/Documents/Satellite_results'
+Results_folder = 'C:/Users/F.Divruno/Dropbox (SKA)/Python_codes/satellite_results'
+
 if __name__ == '__main__':
-    # OneWeb parameters
+    constellation = 1
+    if constellation == 0:
+        #Starlink Constellation
+        Const_name = 'Starlink - '
+        orbit_incl = 53*u.deg
+        orbit_height = 550*u.km 
+        orbit_period = 5760.0*u.s
+        N_planes = 24 
+        Sats_per_plane = 66
+        max_time  = 5760*u.s 
+        time_steps = 5700
+
+    elif constellation == 1:    
+        # OneWeb parameters
+        Const_name = 'Oneweb - '
+        orbit_incl = 87.9*u.deg
+        orbit_height = 1200*u.km
+        orbit_period = 6600*u.s
+        N_planes = 36
+        Sats_per_plane = 55
+        max_time  = 6600*u.s
+        time_steps = 3000
+
+    elif constellation == 2:
+        #Test Constellation
+        Const_name = 'Test - '
+        orbit_incl = 53*u.deg
+        orbit_height = 550*u.km 
+        orbit_period = 5760.0*u.s
+        N_planes = 24 
+        Sats_per_plane = 1
+        max_time  = 5760*u.s 
+        time_steps = 3000
+
     
-    orbit_incl = 87.9*u.deg
-    orbit_height = 1200*u.km
-    max_time  = 6600*u.s #1*u.h
-    time_steps = 6600
-    N_planes = 36
-    Sats_per_plane = 55 
-    orbit_period = 6600*u.s
-    #Radiated power
-    EIRP_dBW_Hz = -49.4 #dBW/Hz
-    EIRP_dBm_Hz = EIRP_dBW_Hz + 30 # dBm/Hz
-    #in 250 MHz channel
-    EIRP = EIRP_dBm_Hz + 10*np.log10(250e6)
-    EIRP_lin = 10**(EIRP/10) # in mW
-    
+    CHBW = 250e6 # Hz
+    global fo
+    fo = 11e9
+    Pfd_4kHz = -146 # dBW/m2 pfd between -65 and 65 deg, consider worst case. 
+    global Pfd_CH
+    Pfd_CH = Pfd_4kHz + 10*np.log10(CHBW/4e3) + 30 #dBm/m2
+        
     RS = 5 # random seed for create_orbits
     
     el_min = 20*u.deg
     el_max = 90*u.deg
-    el_step = 2*u.deg
+    el_step = 1*u.deg
+
+    N_threads = 20
     
     # Calculating received power from satellites
     global el,az
@@ -442,18 +571,18 @@ if __name__ == '__main__':
     plt.xlabel('Azimuth')
     plt.ylabel('Elevation')
     plt.grid()
-    plt.savefig('../satellite_results/sky grid in rectuangular plot - el step %d.png'%int(el_step.value))
+    plt.savefig(Results_folder + '/sky grid in rectuangular plot - el step %d.png'%int(el_step.value))
 
     fig = plt.figure(figsize=[20,15])
     plt.polar(az*np.pi/180,(90-el)*np.pi/180,'.')
-    plt.savefig('../satellite_results/sky grid in polar plot - el step %d.png'%int(el_step.value))
+    plt.savefig(Results_folder + '/sky grid in polar plot - el step %d.png'%int(el_step.value))
         
     N_trys = 1
     avePrx = np.zeros([N_trys,len(el)])
     maxPrx = np.zeros([N_trys,len(el)])
     Prx = np.zeros([N_trys,len(el),time_steps])
     # Generate N threads to divide the sky
-    N_threads = 10
+
     
     
     for i in range(N_trys):
@@ -481,16 +610,17 @@ if __name__ == '__main__':
         # Plot the visible satellites in AzAlt reference frame
         plot_orbit_AltAz(sat_pos,plot_all=True)
         plt.title('All satellites in Horizontal ref frame')
-        plt.savefig('../satellite_results/All sats horizontal ref'+identifier+'.png')
+        plt.savefig(Results_folder + '/'+Const_name+'All sats horizontal ref'+identifier+'.png')
         
         plot_orbit_AltAz(sat_pos,plot_all=False)
         plt.title('Only visible satellites in Horizontal ref frame')
-        plt.savefig('../satellite_results/Visible sats horizontal ref'+identifier+'.png')
+        plt.savefig(Results_folder + '/'+Const_name+'Visible sats horizontal ref'+identifier+'.png')
        
+#%%
         #Calculate the received power
         # use threading to accelerate the calculation
         global chunks
-        chunks = 10
+        chunks = N_threads
         with concurrent.futures.ThreadPoolExecutor() as executor:
             for Prx_thread, avePrx_thread, maxPrx_thread,chunk in executor.map(receive_power_threading, range(chunks)):
                 # put results into correct output list
@@ -501,39 +631,100 @@ if __name__ == '__main__':
                     ind_start = (chunk)*int(np.ceil(len(el)/chunks))
                     ind_end = len(el)
                                
-                Prx[i,ind_start:ind_end,:] = Prx_thread*EIRP_lin+1e-10
-                avePrx[i,ind_start:ind_end] = avePrx_thread*EIRP_lin+1e-10
-                maxPrx[i,ind_start:ind_end] = maxPrx_thread*EIRP_lin+1e-10
+                Prx[i,ind_start:ind_end,:] = Prx_thread+1e-10
+                avePrx[i,ind_start:ind_end] = avePrx_thread+1e-10
+                maxPrx[i,ind_start:ind_end] = maxPrx_thread+1e-10
                 print('Thread chunk %d finished'%chunk)
        
         
         
         # plot the received power in the sky
         blk,ax = plot_trimesh(el,az,maxPrx[i,:],'Maximum received power '+ identifier ,0,180)
-        plt.savefig('../satellite_results/Max received power - full sky '+identifier+'-side.png')
+        plt.savefig(Results_folder + '/'+Const_name+'Max received power - full sky '+identifier+'-side.png')
         ax.view_init(90,-90)
         plt.draw()
-        plt.savefig('../satellite_results/Max received power - full sky '+identifier+'-front.png')
+        plt.savefig(Results_folder + '/'+Const_name+'Max received power - full sky '+identifier+'-front.png')
                 
         blk,ax = plot_trimesh(el,az,avePrx[i,:], 'Average received power in %s'%(max_time)+ identifier ,0,180)
-        plt.savefig('../satellite_results/Avg received power - full sky '+identifier+'-side.png')
+        plt.savefig(Results_folder + '/'+Const_name+'Avg received power - full sky '+identifier+'-side.png')
         ax.view_init(90,-90)
         plt.draw()
-        plt.savefig('../satellite_results/Avg received power - full sky '+identifier+'-front.png')
+        plt.savefig(Results_folder + '/'+Const_name+'Avg received power - full sky '+identifier+'-front.png')
         
         #max in time domain:
         k = np.where(maxPrx[i,:]==np.max(maxPrx[i,:]))
         plot_rx_power_in_time(az[k],el[k],Prx[i])
-        plt.savefig('../satellite_results/Instantaneous received power - el %.2f Az %.2f'%(el[k],az[k])+identifier+'.png')
+        plt.savefig(Results_folder + '/'+Const_name+'Instantaneous received power - el %.2f Az %.2f'%(el[k],az[k])+identifier+'.png')
 #%%        
         #save the max and averaged power
-        savefile = 0
+        savefile = 1
         if savefile :
-            files = os.listdir('../satellite_results')
-            filename = '../satellite_results/Satellites '+identifier
+            files = os.listdir(Results_folder + '')
+            filename = Results_folder + '/'+Const_name+'Satellites '+identifier
             j=0
             filename2 = filename + ' - ' + str(j)
             while filename2 in files:
                 j+=1
                 filename2 =  filename + ' - ' + str(j)
-            np.savez(filename2,el=el,az=az,Prx=Prx,maxPrx=maxPrx[i],avePrx=avePrx[i])
+            np.savez(filename2,sat_pos,el=el,az=az,Prx=Prx,maxPrx=maxPrx[i],avePrx=avePrx[i])
+
+#%% CDF
+        plt.figure(figsize=[15,10])
+        cdf = plt.hist(10*np.log10(Prx.flatten()),1000,density=True,cumulative=True,histtype='step')
+        plt.title('Cumulative dist funct of instantaneous received power')
+        i = np.where(cdf[0]>0.98)[0][0]
+        plt.plot([cdf[1][i],cdf[1][i]],[0,1])
+        plt.savefig(Results_folder + '/'+Const_name+'Cumulative dist funct of Prx'+identifier+'.png')
+        
+        plt.figure(figsize=[15,10])
+        cdf = plt.hist(10*np.log10(avePrx.flatten()),1000,density=True,cumulative=True,histtype='step')
+        plt.title('Cumulative dist funct of average received power')
+        i = np.where(cdf[0]>0.98)[0][0]
+        plt.plot([cdf[1][i],cdf[1][i]],[0,1])
+        plt.savefig(Results_folder + '/'+Const_name+'Cumulative dist funct of avePrx'+identifier+'.png')
+        
+        plt.figure(figsize=[15,10])
+        cdf = plt.hist(10*np.log10(maxPrx.flatten()),1000,density=True,cumulative=True,histtype='step')
+        plt.title('Cumulative dist funct of maximum received power')
+        i = np.where(cdf[0]>0.98)[0][0]
+        plt.plot([cdf[1][i],cdf[1][i]],[0,1])
+        plt.savefig(Results_folder + '/'+Const_name+'Cumulative dist funct of maxPrx'+identifier+'.png')
+
+#%% Histograms
+        plt.figure(figsize=[15,10])
+        plt.hist(10*np.log10(Prx.flatten()),1000,density=True)
+        plt.title('Histogram of instantaneous received power')
+        plt.savefig(Results_folder + '/'+Const_name+'Histogram of Prx'+identifier+'.png')
+        
+        plt.figure(figsize=[15,10])
+        plt.hist(10*np.log10(avePrx.flatten()),1000,density=True)
+        plt.title('Histogram of average received power')
+        plt.savefig(Results_folder + '/'+Const_name+'Histogram of avePrx'+identifier+'.png')
+        
+        plt.figure(figsize=[15,10])
+        plt.hist(10*np.log10(maxPrx),1000,density=True)
+        plt.title('Histogram of maximum received power')
+        plt.savefig(Results_folder + '/'+Const_name+'Histogram of maxPrx'+identifier+'.png')
+
+#%% Inspect the full Prx matrix to see the distribution of the 98% power value in every az el point
+        
+#        plt.figure(figsize=[15,10])
+#        Prx_98perc = np.zeros(len(el))
+#        # calculate the 98% value for each az,el value
+#        for i in range(len(el)):
+#            [num,bins] = np.histogram(10*np.log10(Prx[0,i,:]),1000)
+#            cdf = np.cumsum(num)/np.sum(num)
+#            ind = np.where(cdf>0.98)[0][0]
+#            Prx_98perc[i] = bins[ind]
+#            print(i)
+#            
+        #plot the histogram of this 98% values
+        plt.figure(figsize=[15,10])
+        plt.hist(Prx_98perc,100,density=True)
+        plt.title('Histogram of 98% values of Prx for each az,el point')
+        
+        plt.figure(figsize=[15,10])
+        plt.hist(Prx_98perc,100,density=True,cumulative=True,histtype='step')
+        plt.title('CDF of 98% values of Prx for each az,el point')
+
+        
