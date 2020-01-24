@@ -292,7 +292,7 @@ def generate_az_el_grid(el_min=15*u.deg,el_max=90*u.deg,el_step=1*u.deg):
 
 
 
-@jit
+#@jit
 def offbeam_angle(ska_el,ska_az,sat_el,sat_az):
     # angle between pointing vector and position of the satellite in AltAz frame
     # angles need to be in radians
@@ -506,11 +506,12 @@ def plot_rx_power_in_time(Point_az, Point_el, Prx_time,fig=[]):
 
 
 #%% Start rhe calculation
-Results_folder = 'C:/Users/f.divruno/Documents/Satellite_results'
-Results_folder = 'C:/Users/F.Divruno/Dropbox (SKA)/Python_codes/satellite_results'
 
 if __name__ == '__main__':
-    constellation = 1
+    Results_folder = 'C:/Users/f.divruno/Documents/Satellite_results'
+    #Results_folder = 'C:/Users/F.Divruno/Dropbox (SKA)/Python_codes/satellite_results'
+
+    constellation = 0
     if constellation == 0:
         #Starlink Constellation
         Const_name = 'Starlink - '
@@ -558,7 +559,7 @@ if __name__ == '__main__':
     el_max = 90*u.deg
     el_step = 1*u.deg
 
-    N_threads = 20
+    N_threads = 100
     
     # Calculating received power from satellites
     global el,az
@@ -702,7 +703,7 @@ if __name__ == '__main__':
         plt.savefig(Results_folder + '/'+Const_name+'Histogram of avePrx'+identifier+'.png')
         
         plt.figure(figsize=[15,10])
-        plt.hist(10*np.log10(maxPrx),1000,density=True)
+        plt.hist(10*np.log10(maxPrx.flatten()),1000,density=True)
         plt.title('Histogram of maximum received power')
         plt.savefig(Results_folder + '/'+Const_name+'Histogram of maxPrx'+identifier+'.png')
 
