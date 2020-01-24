@@ -108,3 +108,7 @@ venv.bak/
 
 #SRTM files (used to plot high res images)
 *.hgt
+
+#images
+*.png
+*.jpg
