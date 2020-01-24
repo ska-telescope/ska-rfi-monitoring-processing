@@ -365,7 +365,7 @@ def receive_power_threading(chunk):
     #prepare the loop
     avePrx = np.zeros(len(el2))
     maxPrx = np.zeros(len(el2))
-    print('\nElevation vector in thread %d  %d'%(chunk,len(el2)))
+    print('\nExecuting thread %d  '%(chunk))
     
     #looks for the time steps where the elevation is >=0
     ind = np.where(sat_pos[:,:,1]>=0)
@@ -377,11 +377,10 @@ def receive_power_threading(chunk):
     ind_0 = ind[0]
 
 
-   
+    start = time.time()   
     for i in range(len(el2)):
         el_rad = el2[i]*np.pi/180
         az_rad = az2[i]*np.pi/180
-        start = time.time()
 
         for sat_ind in visible_sats:
             # Get the time indices where the satellite is visible
@@ -408,14 +407,14 @@ def receive_power_threading(chunk):
             Prx[i,time_ind] += Prx_sat
             
         Prx[i,:] *= Pow_const
-        end = time.time()
-        print('\nThread loop time: %.3f sec,  total thread time: %.2f min' %(end-start,(end-start)*len(el2)/60))        
     # Average for all the time calculated
     avePrx = np.sum(Prx,1)/time_steps
     
     # Maximum power in all the time considered
     maxPrx = np.max(Prx,1)
 
+    end = time.time()
+    print('\nThread # %d time: %.3f sec' %(chunk,end-start))        
 
     return Prx,avePrx, maxPrx, chunk
 
@@ -709,16 +708,16 @@ if __name__ == '__main__':
 
 #%% Inspect the full Prx matrix to see the distribution of the 98% power value in every az el point
         
-#        plt.figure(figsize=[15,10])
-#        Prx_98perc = np.zeros(len(el))
-#        # calculate the 98% value for each az,el value
-#        for i in range(len(el)):
-#            [num,bins] = np.histogram(10*np.log10(Prx[0,i,:]),1000)
-#            cdf = np.cumsum(num)/np.sum(num)
-#            ind = np.where(cdf>0.98)[0][0]
-#            Prx_98perc[i] = bins[ind]
-#            print(i)
-#            
+        plt.figure(figsize=[15,10])
+        Prx_98perc = np.zeros(len(el))
+        # calculate the 98% value for each az,el value
+        for i in range(len(el)):
+            [num,bins] = np.histogram(10*np.log10(Prx[0,i,:]),1000)
+            cdf = np.cumsum(num)/np.sum(num)
+            ind = np.where(cdf>0.98)[0][0]
+            Prx_98perc[i] = bins[ind]
+            print(i)
+            
         #plot the histogram of this 98% values
         plt.figure(figsize=[15,10])
         plt.hist(Prx_98perc,100,density=True)
