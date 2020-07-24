@@ -2,6 +2,9 @@
 """
 Created on Wed May 22 02:42:48 2019
 
+This code process the data collected during the 2017 RFI campaign in the SKA-MID site.
+The HDF5 files can be found in ""
+
 @author: F.Divruno
 """
 import matplotlib.pyplot as plt
